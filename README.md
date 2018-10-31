@@ -7,7 +7,7 @@ Main functionality:
 * Reads a CSV file, with optional custom delimiter, into an accessible DataTable object with the original database table schema, and writes to target table.
 * Writes a database table into an accessible DataTable object with the original database table schema, and writes to CSV file with optional custom delimiter.
 
-## Usage
+## Usage in C#
 
 Import CSV into a database table.
 
