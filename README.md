@@ -4,7 +4,7 @@ Import and export CSVs the easy way.
 
 Main functionality:
 
-* Reads a CSV file, with optional custom delimiter, into an accessible DataTable object with the original database table schema, and writes to target table.
+* Reads a CSV file, with optional custom delimiter, into an accessible DataTable object with the original database table schema, and writes to target table via SqlBulkQuery with transaction.
 * Writes a database table into an accessible DataTable object with the original database table schema, and writes to CSV file with optional custom delimiter.
 
 ## Usage in C#
