@@ -102,8 +102,6 @@ namespace EasyCsvLib
         {
             if (c.IsEmpty(path))
                 _error = "Parameter 'path' is required.";
-            else if (!File.Exists(path))
-                _error = String.Format("{0} does not exist.", path);
             else if (c.IsEmpty(connectionString))
                 _error = "Parameter 'connectionString' is required.";
             else if(c.IsEmpty(queryString))
