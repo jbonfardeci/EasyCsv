@@ -140,6 +140,7 @@ namespace EasyCsvLib
             _connectionString = connectionString;       
             _queryString = queryString;
             _delimiter = delimiter;
+            _isStoredProcedure = isStoredProcedure;
 
             GetData();
 
