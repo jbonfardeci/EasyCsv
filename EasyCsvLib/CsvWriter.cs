@@ -10,7 +10,20 @@ using c = EasyCsvLib.Common;
 
 namespace EasyCsvLib
 {
-    public class CsvWriter : IDisposable
+    public interface ICsvWriter
+    {
+        bool OutputToCsv(char delimiter = ',');
+        string Error { get; }
+        DataTable DataTable { get; }
+        char Delimiter { get; set; }
+        string ConnectionString { get; set; }
+        string FilePath { get; set; }
+        string QueryString { get; set; }
+        bool IsStoredProcedure { get; set; }
+        void Dispose();
+    }
+
+    public class CsvWriter : IDisposable, ICsvWriter
     {
         private string _error = null;
         public string Error
@@ -90,6 +103,19 @@ namespace EasyCsvLib
             }
         }
 
+        private bool _isStoredProcedure = false;
+        public bool IsStoredProcedure
+        {
+            get
+            {
+                return _isStoredProcedure;
+            }
+            set
+            {
+                _isStoredProcedure = value;
+            }
+        }
+
         /// <summary>
         /// CSV Writer
         /// Output results of an SQL query to a CSV.
@@ -98,7 +124,7 @@ namespace EasyCsvLib
         /// <param name="connectionString"></param>
         /// <param name="delimiter"></param>
         /// <param name="queryString"></param>
-        public CsvWriter(string path, string connectionString, string queryString, char delimiter = ',')
+        private CsvWriter(string path, string connectionString, string queryString, char delimiter = ',', bool isStoredProcedure = false)
         {
             if (c.IsEmpty(path))
                 _error = "Parameter 'path' is required.";
@@ -127,12 +153,20 @@ namespace EasyCsvLib
             }
         }
 
+        public static ICsvWriter Create(string path, string connectionString, string queryString, char delimiter = ',', bool isStoredProcedure = false)
+        {
+            return new CsvWriter(path, connectionString, queryString, delimiter);
+        }
+
         protected virtual void GetData()
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.Connection = new SqlConnection(_connectionString);
-            cmd.CommandType = CommandType.Text;
-            cmd.CommandText = _queryString;
+            SqlCommand cmd = new SqlCommand()
+            {
+                Connection = new SqlConnection(_connectionString),
+                CommandType = _isStoredProcedure ? CommandType.StoredProcedure : CommandType.Text,
+                CommandText = _queryString
+            };
+
             SqlDataAdapter da = new SqlDataAdapter(cmd);
 
             try

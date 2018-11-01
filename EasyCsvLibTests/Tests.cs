@@ -1,5 +1,6 @@
 ﻿using System;
 using NUnit.Framework;
+using EasyCsvLib;
 
 namespace EasyCsvLibTests
 {
@@ -12,7 +13,7 @@ namespace EasyCsvLibTests
         [Test]
         public void ImportCsv()
         {
-            var csv = new EasyCsvLib.CsvReader(path: _root+"example.csv", tableName: "TestTable", connectionString: _connectionString);
+            ICsvReader csv = CsvReader.Create(path: _root+"example.csv", tableName: "TestTable", connectionString: _connectionString);
             long rowsAdded = csv.ImportCsv();
             int rowCount = csv.DataTable.Rows.Count;
             string error = csv.Error;
@@ -28,7 +29,7 @@ namespace EasyCsvLibTests
         public void OutputToCsv()
         {
             string outputPath = _root + "output_test.csv";
-            var csv = new EasyCsvLib.CsvReader(path: _root + "example.csv", tableName: "TestTable", connectionString: _connectionString);
+            var csv = CsvReader.Create(path: _root + "example.csv", tableName: "TestTable", connectionString: _connectionString);
             bool success = csv.OutputToCsv(outputPath);
             string error = csv.Error;
             csv.Dispose();
@@ -43,7 +44,7 @@ namespace EasyCsvLibTests
         public void OutputTableDef()
         {
             string outputPath = _root + "output_test_definition.txt";
-            var csv = new EasyCsvLib.CsvReader(path: _root + "example.csv", tableName: "TestTable", connectionString: _connectionString);
+            ICsvReader csv = CsvReader.Create(path: _root + "example.csv", tableName: "TestTable", connectionString: _connectionString);
             bool success = csv.OutputTableDefinition(outputPath);
             string error = csv.Error;
             csv.Dispose();
@@ -57,7 +58,7 @@ namespace EasyCsvLibTests
         [Test]
         public void OutputQueryToCsv()
         {
-            var csv = new EasyCsvLib.CsvWriter(path: _root + "output_from_table.csv", queryString: "SELECT * FROM dbo.TestTable", connectionString: _connectionString);
+            ICsvWriter csv = CsvWriter.Create(path: _root + "output_from_table.csv", queryString: "SELECT * FROM dbo.TestTable", connectionString: _connectionString);
             bool success = csv.OutputToCsv();
             string error = csv.Error;
             csv.Dispose();

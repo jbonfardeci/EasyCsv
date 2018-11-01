@@ -4,8 +4,8 @@ Import and export CSVs the easy way.
 
 Main functionality:
 
-* Reads a CSV file, with optional custom delimiter, into an accessible DataTable object with the original database table schema, and writes to target table via SqlBulkCopy with transaction.
-* Writes a database table into an accessible DataTable object with the original database table schema, and writes to CSV file with optional custom delimiter.
+* Reads a CSV file, mapping values to correct data types into an accessible DataTable object with the original database table schema. Writes to target table via SqlBulkCopy with transaction.
+* Writes ad-hoc or stored procedure query results into an accessible DataTable object. Writes to CSV file with optional custom delimiter.
 
 ## Usage in C#
 
@@ -19,7 +19,7 @@ char delimiter = ','; // ',' by default
 long rowsAdded = 0;
 DataTable dataTable = null;
 
-using(var reader = new EasyCsvLib.CsvReader(path, tableName, connectionString, delimiter)){
+using(ICsvReader reader = EasyCsvLib.CsvReader.Create(path, tableName, connectionString, delimiter)){
     dataTable = reader.DataTable; // Just use the datatable for other operations or...
     rowsAdded = reader.ImportCsv(); // ...import into the database table.
 }
@@ -36,7 +36,7 @@ char delimiter = ','; // ',' by default
 bool success = false;
 DataTable dataTable = null;
 
-using(var writer = new EasyCsvLib.CsvWriter(path, connectionString, queryString, delimiter)){
+using(ICsvWriter writer = EasyCsvLib.CsvWriter.Create(path, connectionString, queryString, delimiter)){
     dataTable = writer.DataTable; // Just use the datatable for other operations or...
     success = writer.OutputToCsv(); // ...export to CSV.
 }
@@ -55,7 +55,7 @@ $connectionString = "Server=localhost;Database=myDataTable;Trusted_Connection=ye
 
 function importCsv($path, $tableName, $connectionString){
     $rowsAdded = 0;
-    $reader = New-Object EasyCsvLib.CsvReader($path, $tableName, $connectionString);
+    $reader = EasyCsvLib.CsvReader.Create($path, $tableName, $connectionString);
     $rowsAdded = $reader.ImportCsv();
     $reader.Dispose();
 
@@ -79,7 +79,7 @@ $connectionString = "Server=localhost;Database=myDataTable;Trusted_Connection=ye
 
 function exportCsv($path, $connectionString, $queryString){
     $success = $false;
-    $writer = New-Object EasyCsvLib.CsvWriter($path, $connectionString, $queryString);
+    $writer = EasyCsvLib.CsvWriter.Create($path, $connectionString, $queryString);
     $success = $writer.OutputToCsv();
     $writer.Dispose();
 

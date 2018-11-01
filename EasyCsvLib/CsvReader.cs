@@ -10,7 +10,21 @@ using c = EasyCsvLib.Common;
 
 namespace EasyCsvLib
 {
-    public class CsvReader : IDisposable
+    public interface ICsvReader
+    {
+        long ImportCsv();
+        string Error { get; }
+        DataTable DataTable { get; }
+        string TableName { get; set; }
+        char Delimiter { get; set; }
+        string ConnectionString { get; set; }
+        string FilePath { get; set; }
+        bool OutputTableDefinition(string outputPath);
+        bool OutputToCsv(string outputPath, char delimiter = ',');
+        void Dispose();  
+    }
+
+    public class CsvReader : IDisposable, ICsvReader
     {
         private string _error = null;
         public string Error
@@ -26,7 +40,17 @@ namespace EasyCsvLib
         }
 
         // Matches strings and strings that have quotes around them and include embedded delimiters.
-        private Regex _rxCsv = new Regex(_delimiter.ToString() + "(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))", RegexOptions.Compiled);
+        private Regex _rxCsv = null;
+        public Regex RxCsv
+        {
+            get
+            {
+                if(_rxCsv == null)
+                    _rxCsv = new Regex(_delimiter.ToString() + "(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))", RegexOptions.Compiled);
+
+                return _rxCsv;
+            }
+        }
 
         private Regex _rxStripQuotes = new Regex("(^\"|\"$)");
 
@@ -106,7 +130,7 @@ namespace EasyCsvLib
         /// <param name="tableName"></param>
         /// <param name="connectionString"></param>
         /// <param name="delimiter"></param>
-        public CsvReader(string path, string tableName, string connectionString, char delimiter = ',')
+        private CsvReader(string path, string tableName, string connectionString, char delimiter = ',')
         {
             if(c.IsEmpty(path))
                 _error = "Parameter 'path' is required.";
@@ -143,6 +167,11 @@ namespace EasyCsvLib
                 throw new Exception("Error filling DataTable: " + _error);
         }
 
+        public static ICsvReader Create(string path, string tableName, string connectionString, char delimiter = ',')
+        {
+            return new CsvReader(path, tableName, connectionString, delimiter);
+        }
+
         /// <summary>
         /// Gets the column names from the header in the CSV file.
         /// </summary>
@@ -152,7 +181,7 @@ namespace EasyCsvLib
         {
             if (lines.Length > 0)
             {
-                string[] colNames = _rxCsv.Split(lines[0]);
+                string[] colNames = RxCsv.Split(lines[0]);
                 for (int i=0; i < colNames.Length; i++)
                     colNames[i] = _rxStripQuotes.Replace(colNames[i], "").Trim();
 
@@ -169,10 +198,12 @@ namespace EasyCsvLib
         /// <param name="colNames"></param>
         protected virtual void CreateDataTable(string[] colNames)
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.Connection = new SqlConnection(_connectionString);
-            cmd.CommandType = CommandType.Text;
-            cmd.CommandText = string.Format("SELECT TOP 1 {0} FROM {1}", String.Join(",", colNames), _tableName);
+            SqlCommand cmd = new SqlCommand
+            {
+                Connection = new SqlConnection(_connectionString),
+                CommandType = CommandType.Text,
+                CommandText = string.Format("SELECT TOP 1 {0} FROM {1}", String.Join(",", colNames), _tableName)
+            };
             SqlDataAdapter da = new SqlDataAdapter(cmd);
             try
             {
@@ -222,7 +253,7 @@ namespace EasyCsvLib
                     if (rowCount > 0)
                     {
                         DataRow row = _dataTable.NewRow();
-                        string[] values = _rxCsv.Split(line);
+                        string[] values = RxCsv.Split(line);
 
                         if (values.Length == 0)
                             continue;
