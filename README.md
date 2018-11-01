@@ -19,7 +19,7 @@ char delimiter = ','; // ',' by default
 long rowsAdded = 0;
 DataTable dataTable = null;
 
-using(ICsvReader reader = EasyCsvLib.CsvReader.Create(path, tableName, connectionString, delimiter)){
+using(ICsvReader reader = EasyCsvLib.CsvReader.Create(path: path, tableName: tableName, connectionString: connectionString, delimiter: ',')){
     dataTable = reader.DataTable; // Just use the datatable for other operations or...
     rowsAdded = reader.ImportCsv(); // ...import into the database table.
 }
@@ -36,7 +36,7 @@ char delimiter = ','; // ',' by default
 bool success = false;
 DataTable dataTable = null;
 
-using(ICsvWriter writer = EasyCsvLib.CsvWriter.Create(path, connectionString, queryString, delimiter)){
+using(ICsvWriter writer = EasyCsvLib.CsvWriter.Create(path: path, connectionString: connectionString, queryString: queryString, delimiter: ',', isStoredProcedure: false)){
     dataTable = writer.DataTable; // Just use the datatable for other operations or...
     success = writer.OutputToCsv(); // ...export to CSV.
 }
@@ -55,7 +55,7 @@ $connectionString = "Server=localhost;Database=myDataTable;Trusted_Connection=ye
 
 function importCsv($path, $tableName, $connectionString){
     $rowsAdded = 0;
-    $reader = EasyCsvLib.CsvReader.Create($path, $tableName, $connectionString);
+    $reader = EasyCsvLib.CsvReader.Create($path, $tableName, $connectionString, ',');
     $rowsAdded = $reader.ImportCsv();
     $reader.Dispose();
 
@@ -79,7 +79,7 @@ $connectionString = "Server=localhost;Database=myDataTable;Trusted_Connection=ye
 
 function exportCsv($path, $connectionString, $queryString){
     $success = $false;
-    $writer = EasyCsvLib.CsvWriter.Create($path, $connectionString, $queryString);
+    $writer = EasyCsvLib.CsvWriter.Create($path, $connectionString, $queryString, ',', $false);
     $success = $writer.OutputToCsv();
     $writer.Dispose();
 
