@@ -47,13 +47,9 @@ using(var writer = new EasyCsvLib.CsvWriter(path, connectionString, queryString,
 Import CSV into a database table.
 
 ```PowerShell
-[System.Reflection.Assembly]::LoadFrom(@"
-C:\bin\EasyCsvLib.dll
-"@);
+[System.Reflection.Assembly]::LoadFrom(".\\bin\\EasyCsvLib.dll");
 
-$inputDir = @"
-C:\csv\{0}
-"@;
+$inputDir = ".\\csv\\{0}";
 
 $connectionString = "Server=localhost;Database=myDataTable;Trusted_Connection=yes;";
 
@@ -75,13 +71,9 @@ echo "Added $rowCount rows.";
 Export table to CSV.
 
 ```PowerShell
-[System.Reflection.Assembly]::LoadFrom(@"
-C:\bin\EasyCsvLib.dll
-"@);
+[System.Reflection.Assembly]::LoadFrom(".\\bin\\EasyCsvLib.dll");
 
-$outputDir = @"
-C:\csv\{0}
-"@;
+$outputDir = ".\\csv\\{0}";
 
 $connectionString = "Server=localhost;Database=myDataTable;Trusted_Connection=yes;";
 
