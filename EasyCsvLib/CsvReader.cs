@@ -25,18 +25,8 @@ namespace EasyCsvLib
             }
         }
 
-        // This should match strings and strings that
-        // have quotes around them and include embedded commas
-        private Regex __rxCsv = null;
-        private Regex _rxCsv
-        {
-            get{
-                if(__rxCsv == null)
-                    __rxCsv = new Regex(_delimiter.ToString() + "(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))", RegexOptions.Compiled);
-
-                return __rxCsv;
-            }
-        }
+        // Matches strings and strings that have quotes around them and include embedded delimiters.
+        private Regex _rxCsv = new Regex(_delimiter.ToString() + "(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))", RegexOptions.Compiled);
 
         private Regex _rxStripQuotes = new Regex("(^\"|\"$)");
 

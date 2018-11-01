@@ -27,11 +27,8 @@ namespace EasyCsvLib
             for (int i = 0; i < columnCount; i++)
             {
                 string colName = cols[i].ColumnName;
-
-                if (i < columnCount - 1)
-                    csv.AppendFormat("{0}{1}", colName, del);
-                else
-                    csv.AppendFormat("{0}{1}", colName, Environment.NewLine);
+                string ending = (i < columnCount-1) ? del : Environment.NewLine;
+                csv.AppendFormat("{0}{1}", colName, ending);
             }
 
             foreach (DataRow row in dataTable.Rows)
@@ -52,10 +49,8 @@ namespace EasyCsvLib
                     else
                         val = value.ToString();
 
-                    if (j < columnCount - 1)
-                        csv.AppendFormat("{0}{1}", val, del);
-                    else
-                        csv.AppendFormat("{0}{1}", val, Environment.NewLine);
+                    string ending = (j < columnCount-1) ? del : Environment.NewLine;
+                    csv.AppendFormat("{0}{1}", colName, ending);
                 }
             }
 
