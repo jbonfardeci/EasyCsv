@@ -12,7 +12,7 @@ namespace EasyCsvLib
 {
     public interface ICsvWriter
     {
-        bool OutputToCsv(char delimiter = ',');
+        bool OutputToCsv(string delimiter = ",");
         string Error { get; }
         DataTable DataTable { get; }
         char Delimiter { get; set; }
@@ -51,8 +51,8 @@ namespace EasyCsvLib
             }
         }
 
-        private char _delimiter = ',';
-        public char Delimiter
+        private string _delimiter = ",";
+        public string Delimiter
         {
             get
             {
@@ -124,7 +124,7 @@ namespace EasyCsvLib
         /// <param name="connectionString"></param>
         /// <param name="delimiter"></param>
         /// <param name="queryString"></param>
-        private CsvWriter(string path, string connectionString, string queryString, char delimiter = ',', bool isStoredProcedure = false)
+        private CsvWriter(string path, string connectionString, string queryString, string delimiter = ",", bool isStoredProcedure = false)
         {
             if (c.IsEmpty(path))
                 _error = "Parameter 'path' is required.";
@@ -132,6 +132,8 @@ namespace EasyCsvLib
                 _error = "Parameter 'connectionString' is required.";
             else if(c.IsEmpty(queryString))
                 _error = "Parameter 'queryString' is required.";
+            else if (c.IsEmpty(delimiter))
+                _error = "Parameter 'delimiter' is required.";
 
             if (_error != null)
                 throw new Exception(_error);
@@ -154,9 +156,14 @@ namespace EasyCsvLib
             }
         }
 
-        public static ICsvWriter Create(string path, string connectionString, string queryString, char delimiter = ',', bool isStoredProcedure = false)
+        public static ICsvWriter Create(string path, string connectionString, string queryString, string delimiter = ",", bool isStoredProcedure = false)
         {
             return new CsvWriter(path, connectionString, queryString, delimiter);
+        }
+
+        public static ICsvWriter Create(string path, string connectionString, string queryString, char delimiter = ',', bool isStoredProcedure = false)
+        {
+            return new CsvWriter(path, connectionString, queryString, delimiter.ToString());
         }
 
         protected virtual void GetData()
@@ -197,7 +204,7 @@ namespace EasyCsvLib
         /// Output the DataTable to a CSV. 
         /// </summary>
         /// <returns></returns>
-        public virtual bool OutputToCsv(char delimiter = ',')
+        public virtual bool OutputToCsv(string delimiter = ",")
         {
             return c.OutputToCsv(_dataTable, _path, delimiter);
         }

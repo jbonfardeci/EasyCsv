@@ -16,7 +16,7 @@ namespace EasyCsvLib
         string Error { get; }
         DataTable DataTable { get; }
         string TableName { get; set; }
-        char Delimiter { get; set; }
+        string Delimiter { get; set; }
         string ConnectionString { get; set; }
         string FilePath { get; set; }
         bool OutputTableDefinition(string outputPath);
@@ -46,7 +46,7 @@ namespace EasyCsvLib
             get
             {
                 if(_rxCsv == null)
-                    _rxCsv = new Regex(_delimiter.ToString() + "(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))", RegexOptions.Compiled);
+                    _rxCsv = new Regex(_delimiter + "(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))", RegexOptions.Compiled);
 
                 return _rxCsv;
             }
@@ -67,8 +67,8 @@ namespace EasyCsvLib
             }
         }
 
-        private char _delimiter = ',';
-        public char Delimiter
+        private string _delimiter = ",";
+        public string Delimiter
         {
             get
             {
@@ -130,7 +130,7 @@ namespace EasyCsvLib
         /// <param name="tableName"></param>
         /// <param name="connectionString"></param>
         /// <param name="delimiter"></param>
-        private CsvReader(string path, string tableName, string connectionString, char delimiter = ',')
+        private CsvReader(string path, string tableName, string connectionString, string delimiter = ",")
         {
             if(c.IsEmpty(path))
                 _error = "Parameter 'path' is required.";
@@ -140,6 +140,8 @@ namespace EasyCsvLib
                 _error = "Parameter 'tableName' is required.";
             else if (c.IsEmpty(connectionString))
                 _error = "Parameter 'connectionString' is required.";
+            else if (c.IsEmpty(delimiter))
+                _error = "Parameter 'delimiter' is required.";
 
             if (_error != null)
                 throw new Exception(_error);
@@ -167,9 +169,14 @@ namespace EasyCsvLib
                 throw new Exception("Error filling DataTable: " + _error);
         }
 
-        public static ICsvReader Create(string path, string tableName, string connectionString, char delimiter = ',')
+        public static ICsvReader Create(string path, string tableName, string connectionString, string delimiter = ",")
         {
             return new CsvReader(path, tableName, connectionString, delimiter);
+        }
+
+        public static ICsvReader Create(string path, string tableName, string connectionString, char delimiter = ',')
+        {
+            return new CsvReader(path, tableName, connectionString, delimiter.ToString());
         }
 
         /// <summary>

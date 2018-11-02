@@ -17,17 +17,16 @@ namespace EasyCsvLib
         /// <param name="outputPath"></param>
         /// <param name="delimiter"></param>
         /// <returns></returns>
-        public static bool OutputToCsv(DataTable dataTable, string outputPath, char delimiter = ',')
+        public static bool OutputToCsv(DataTable dataTable, string outputPath, string delimiter = ",")
         {
             StringBuilder csv = new StringBuilder();
             DataColumnCollection cols = dataTable.Columns;
             int columnCount = cols.Count;
-            string del = delimiter.ToString();
 
             for (int i = 0; i < columnCount; i++)
             {
                 string colName = cols[i].ColumnName;
-                string ending = (i < columnCount-1) ? del : Environment.NewLine;
+                string ending = (i < columnCount-1) ? delimiter : Environment.NewLine;
                 csv.AppendFormat("{0}{1}", colName, ending);
             }
 
@@ -49,7 +48,7 @@ namespace EasyCsvLib
                     else
                         val = value.ToString();
 
-                    string ending = (j < columnCount-1) ? del : Environment.NewLine;
+                    string ending = (j < columnCount-1) ? delimiter : Environment.NewLine;
                     csv.AppendFormat("{0}{1}", colName, ending);
                 }
             }
