@@ -41,12 +41,12 @@ namespace EasyCsvLib
 
         // Matches strings and strings that have quotes around them and include embedded delimiters.
         private Regex _rxCsv = null;
-        public Regex RxCsv
+        protected Regex RxCsv
         {
             get
             {
                 if(_rxCsv == null)
-                    _rxCsv = new Regex(_delimiter + "(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))", RegexOptions.Compiled);
+                    _rxCsv = new Regex(_delimiter + "(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))", RegexOptions.Multiline);
 
                 return _rxCsv;
             }
@@ -432,9 +432,19 @@ namespace EasyCsvLib
         /// <returns></returns>
         public virtual bool OutputToCsv(string outputPath, char delimiter = ',')
         {
+            return c.OutputToCsv(_dataTable, outputPath, delimiter.ToString());
+        }
+
+        /// <summary>
+        /// Output the DataTable to a CSV. 
+        /// </summary>
+        /// <param name="outputPath"></param>
+        /// <returns></returns>
+        public virtual bool OutputToCsv(string outputPath, string delimiter = ",")
+        {
             return c.OutputToCsv(_dataTable, outputPath, delimiter);
         }
-        
+
         /// <summary>
         /// Dispose reference objects in memory.
         /// </summary>

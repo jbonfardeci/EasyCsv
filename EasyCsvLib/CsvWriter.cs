@@ -204,6 +204,15 @@ namespace EasyCsvLib
         /// Output the DataTable to a CSV. 
         /// </summary>
         /// <returns></returns>
+        public virtual bool OutputToCsv(char delimiter = ',')
+        {
+            return c.OutputToCsv(_dataTable, _path, delimiter.ToString());
+        }
+
+        /// <summary>
+        /// Output the DataTable to a CSV. 
+        /// </summary>
+        /// <returns></returns>
         public virtual bool OutputToCsv(string delimiter = ",")
         {
             return c.OutputToCsv(_dataTable, _path, delimiter);

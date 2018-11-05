@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace EasyCsvLib
 {
@@ -59,6 +60,11 @@ namespace EasyCsvLib
 
         #region Parsers
 
+        public static Regex RxInt = new Regex("[^0-9]", RegexOptions.Compiled);
+        public static Regex RxDecimal = new Regex("[^0-9\\.]", RegexOptions.Compiled);
+        public static Regex RxBoolTrue = new Regex("(true|yes|1)", RegexOptions.IgnoreCase);
+        public static Regex RxBoolFalse = new Regex("(false|no|0)", RegexOptions.IgnoreCase);
+
         /// <summary>
         /// Check if value is empty.
         /// </summary>
@@ -76,9 +82,12 @@ namespace EasyCsvLib
         /// <returns></returns>
         public static int? ConvertToInt(string val)
         {
+            if (IsEmpty(val))
+                return null;
+
             int n;
 
-            if (int.TryParse(val, out n))
+            if (int.TryParse(RxInt.Replace(val, ""), out n))
                 return n;
 
             return null;
@@ -91,9 +100,12 @@ namespace EasyCsvLib
         /// <returns></returns>
         public static long? ConvertToInt64(string val)
         {
+            if (IsEmpty(val))
+                return null;
+
             long n;
 
-            if (long.TryParse(val, out n))
+            if (long.TryParse(RxInt.Replace(val, ""), out n))
                 return n;
 
             return null;
@@ -106,9 +118,12 @@ namespace EasyCsvLib
         /// <returns></returns>
         public static short? ConvertToInt16(string val)
         {
+            if (IsEmpty(val))
+                return null;
+
             short n;
 
-            if (short.TryParse(val, out n))
+            if (short.TryParse(RxInt.Replace(val, ""), out n))
                 return n;
 
             return null;
@@ -121,9 +136,12 @@ namespace EasyCsvLib
         /// <returns></returns>
         public static decimal? ConvertToDecimal(string val)
         {
+            if (IsEmpty(val))
+                return null;
+
             decimal d;
 
-            if (decimal.TryParse(val, out d))
+            if (decimal.TryParse(RxDecimal.Replace(val, ""), out d))
                 return d;
 
             return null;
@@ -136,12 +154,16 @@ namespace EasyCsvLib
         /// <returns></returns>
         public static bool? ConvertToBoolean(string val)
         {
-            bool b;
+            if (IsEmpty(val))
+                return null;
 
-            if (bool.TryParse(val, out b))
-                return b;
+            if (RxBoolTrue.IsMatch(val))
+                return true;
 
-            return null;
+            if (RxBoolFalse.IsMatch(val))
+                return false;
+
+            return false;
         }
 
         /// <summary>
@@ -151,6 +173,9 @@ namespace EasyCsvLib
         /// <returns></returns>
         public static DateTime? ConvertToDateTime(string val)
         {
+            if (IsEmpty(val))
+                return null;
+
             DateTime d;
 
             if (DateTime.TryParse(val, out d))
