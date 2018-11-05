@@ -19,7 +19,7 @@ char delimiter = ','; // ',' by default
 long rowsAdded = 0;
 DataTable dataTable = null;
 
-using(ICsvReader reader = EasyCsvLib.CsvReader.Create(path: path, tableName: tableName, connectionString: connectionString, delimiter: ',')){
+using(ICsvReader reader = EasyCsvLib.CsvReader.Create(path: path, tableName: tableName, connectionString: connectionString, delimiter: ",")){
     dataTable = reader.DataTable; // Just use the datatable for other operations or...
     rowsAdded = reader.ImportCsv(); // ...import into the database table.
 }
@@ -36,7 +36,7 @@ char delimiter = ','; // ',' by default
 bool success = false;
 DataTable dataTable = null;
 
-using(ICsvWriter writer = EasyCsvLib.CsvWriter.Create(path: path, connectionString: connectionString, queryString: queryString, delimiter: ',', isStoredProcedure: false)){
+using(ICsvWriter writer = EasyCsvLib.CsvWriter.Create(path: path, connectionString: connectionString, queryString: queryString, delimiter: ",", isStoredProcedure: false)){
     dataTable = writer.DataTable; // Just use the datatable for other operations or...
     success = writer.OutputToCsv(); // ...export to CSV.
 }
@@ -47,15 +47,14 @@ using(ICsvWriter writer = EasyCsvLib.CsvWriter.Create(path: path, connectionStri
 Import CSV into a database table.
 
 ```PowerShell
-[System.Reflection.Assembly]::LoadFrom(".\\bin\\EasyCsvLib.dll");
+[System.Reflection.Assembly]::LoadFrom("C:\example\bin\EasyCsvLib.dll");
 
-$inputDir = ".\\csv\\{0}";
-
+$inputDir = "C:\example\csv\{0}";
 $connectionString = "Server=localhost;Database=myDataTable;Trusted_Connection=yes;";
 
-function importCsv($path, $tableName, $connectionString){
+function importCsv($path, $tableName, $connectionString, $delimiter){
     $rowsAdded = 0;
-    $reader = EasyCsvLib.CsvReader.Create($path, $tableName, $connectionString, ',');
+    $reader = New-Object EasyCsvLib.CsvReader($path, $tableName, $connectionString, $delimiter);
     $rowsAdded = $reader.ImportCsv();
     $reader.Dispose();
 
@@ -64,22 +63,21 @@ function importCsv($path, $tableName, $connectionString){
 
 $path = [string]::Format($inputDir, "example.csv");
 $tableName = "dbo.TestTable";
-$rowCount = importCsv $path $tableName $connectionString;
+$rowCount = importCsv $path $tableName $connectionString ",";
 echo "Added $rowCount rows.";
 ```
 
 Export table to CSV.
 
 ```PowerShell
-[System.Reflection.Assembly]::LoadFrom(".\\bin\\EasyCsvLib.dll");
+[System.Reflection.Assembly]::LoadFrom("C:\example\bin\EasyCsvLib.dll");
 
-$outputDir = ".\\csv\\{0}";
-
+$outputDir = "C:\example\csv\{0}";
 $connectionString = "Server=localhost;Database=myDataTable;Trusted_Connection=yes;";
 
-function exportCsv($path, $connectionString, $queryString){
+function exportCsv($path, $connectionString, $queryString, $delimiter, $isProc){
     $success = $false;
-    $writer = EasyCsvLib.CsvWriter.Create($path, $connectionString, $queryString, ',', $false);
+    $writer = New-Object EasyCsvLib.CsvWriter($path, $connectionString, $queryString, $delimiter, $isProc);
     $success = $writer.OutputToCsv();
     $writer.Dispose();
 
@@ -88,7 +86,7 @@ function exportCsv($path, $connectionString, $queryString){
 
 $path = [string]::Format($outputDir, "example.csv");
 $queryString = "SELECT * FROM dbo.TestTable";
-$success = exportCsv $path $connectionString $tasksQuery;
+$success = exportCsv $path $connectionString $tasksQuery "," $false;
 echo "Export Tasks: $success";
 ```
 
