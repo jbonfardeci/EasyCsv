@@ -304,7 +304,7 @@ namespace EasyCsvLib
             string colName = col.ColumnName;
             string val = _rxStripQuotes.Replace(value, "").Trim();
 
-            if (string.IsNullOrEmpty(val) || string.IsNullOrWhiteSpace(val))
+            if (c.IsEmpty(val))
             {
                 row[colName] = DBNull.Value;
                 return;
