@@ -21,6 +21,7 @@ namespace EasyCsvLib
         string FilePath { get; set; }
         bool OutputTableDefinition(string outputPath);
         bool OutputToCsv(string outputPath, char delimiter = ',');
+        bool OutputToCsv(string outputPath, string delimiter = ",");
         void Dispose();  
     }
 
@@ -130,7 +131,7 @@ namespace EasyCsvLib
         /// <param name="tableName"></param>
         /// <param name="connectionString"></param>
         /// <param name="delimiter"></param>
-        private CsvReader(string path, string tableName, string connectionString, string delimiter = ",")
+        public CsvReader(string path, string tableName, string connectionString, string delimiter = ",")
         {
             if(c.IsEmpty(path))
                 _error = "Parameter 'path' is required.";
@@ -209,7 +210,7 @@ namespace EasyCsvLib
             {
                 Connection = new SqlConnection(_connectionString),
                 CommandType = CommandType.Text,
-                CommandText = string.Format("SELECT TOP 1 {0} FROM {1}", String.Join(",", colNames), _tableName)
+                CommandText = string.Format("SELECT TOP 1 * FROM {0}", _tableName)
             };
             SqlDataAdapter da = new SqlDataAdapter(cmd);
             try
@@ -268,6 +269,10 @@ namespace EasyCsvLib
                         for(int i=0; i < colNames.Length; i++)
                         {
                             string colName = colNames[i];
+
+                            if (_dataTable.Columns.IndexOf(colName) < 0)
+                                continue;
+
                             string val = values[i];
                             DataColumn col = _dataTable.Columns[colName];
                             if (col == null)

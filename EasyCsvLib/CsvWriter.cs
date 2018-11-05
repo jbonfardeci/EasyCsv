@@ -13,9 +13,10 @@ namespace EasyCsvLib
     public interface ICsvWriter
     {
         bool OutputToCsv(string delimiter = ",");
+        bool OutputToCsv(char delimiter = ',');
         string Error { get; }
         DataTable DataTable { get; }
-        char Delimiter { get; set; }
+        string Delimiter { get; set; }
         string ConnectionString { get; set; }
         string FilePath { get; set; }
         string QueryString { get; set; }
@@ -124,7 +125,7 @@ namespace EasyCsvLib
         /// <param name="connectionString"></param>
         /// <param name="delimiter"></param>
         /// <param name="queryString"></param>
-        private CsvWriter(string path, string connectionString, string queryString, string delimiter = ",", bool isStoredProcedure = false)
+        public CsvWriter(string path, string connectionString, string queryString, string delimiter = ",", bool isStoredProcedure = false)
         {
             if (c.IsEmpty(path))
                 _error = "Parameter 'path' is required.";
