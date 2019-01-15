@@ -47,7 +47,7 @@ namespace EasyCsvLib
                         val = value.ToString();
 
                     string ending = (j < columnCount-1) ? delimiter : Environment.NewLine;
-                    csv.AppendFormat("{0}{1}", colName, ending);
+                    csv.AppendFormat("{0}{1}", val, ending);
                 }
             }
 
