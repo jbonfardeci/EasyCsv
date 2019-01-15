@@ -330,6 +330,7 @@ namespace EasyCsvLib
                         row[colName] = s.Value;
 
                     break;
+                case "System.Double":
                 case "System.Decimal":
                     decimal? d = c.ConvertToDecimal(val);
                     if (d.HasValue)

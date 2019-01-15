@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Data;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -64,6 +61,7 @@ namespace EasyCsvLib
         public static Regex RxDecimal = new Regex("[^0-9\\.]", RegexOptions.Compiled);
         public static Regex RxBoolTrue = new Regex("(true|yes|1)", RegexOptions.IgnoreCase);
         public static Regex RxBoolFalse = new Regex("(false|no|0)", RegexOptions.IgnoreCase);
+        public static Regex RxDateTime = new Regex("[^0-9\\-\\/]", RegexOptions.IgnoreCase);
 
         /// <summary>
         /// Check if value is empty.
@@ -178,12 +176,13 @@ namespace EasyCsvLib
 
             DateTime d;
 
-            if (DateTime.TryParse(val, out d))
+            if (DateTime.TryParse(RxDateTime.Replace(val, ""), out d))
                 return d;
 
             return null;
         }
 
         #endregion Parsers
+
     }
 }
