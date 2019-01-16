@@ -22,7 +22,7 @@ namespace EasyCsvLib
             this.IncludeSubfolders = includeSubfolders;
         }
 
-        public bool BuildTableSql(string outputPath)
+        public bool BuildTableSql(string outputPath, string schema = "dbo", string defaultSqlType = "nvarchar(255)")
         {
             var tableDefinitions = new StringBuilder();
             Regex rxExt = new Regex("(.|)\\w+$");
@@ -34,7 +34,7 @@ namespace EasyCsvLib
                     string[] lines = File.ReadAllLines(file);
                     string[] colNames = c.GetColNames(lines, this.Delimiter);
                     string tableName = Path.GetFileName(rxExt.Replace(file, ""));
-                    string ddl = c.CreateTableDdl(tableName, colNames);
+                    string ddl = c.CreateTableDdl(tableName: tableName, colNames: colNames, schema: schema, defaultSqlDataType: defaultSqlType);
                     tableDefinitions.Append(ddl);
                 }
             }
