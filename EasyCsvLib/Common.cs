@@ -138,7 +138,7 @@ namespace EasyCsvLib
         }
 
         /// <summary>
-        /// Gets a collection of files from a provided direcotry path.
+        /// Gets a collection of files from a provided directory path.
         /// </summary>
         /// <param name="path"></param>
         /// <param name="extensionFilter"></param>
@@ -154,9 +154,12 @@ namespace EasyCsvLib
             {
                 foreach (string f in Directory.GetFiles(path))
                     files.Add(f);
-                
-                foreach (string d in Directory.GetDirectories(path))
-                    files.AddRange(ReadFiles(d, extensionFilter, includeSubfolders));
+
+                if (includeSubfolders)
+                {
+                    foreach (string d in Directory.GetDirectories(path))
+                        files.AddRange(ReadFiles(d, extensionFilter, includeSubfolders));
+                }
                 
             }
             catch (Exception ex)

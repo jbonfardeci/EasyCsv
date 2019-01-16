@@ -7,15 +7,17 @@ $schema = "dbo";
 
 $extension = "csv";
 
+$defaultSqlType = "nvarchar(255)";
+
 $includeSubFolders = $false;
 
 $sqlOutputPath = "C:\Users\jbonfardeci\source\repos\EasyCsv\TestScripts\sql\mahso_tables.sql";
 
 $csvSourceFolder = "C:\Users\jbonfardeci\source\repos\mahso-db\CsvToDdl";
 
-$connectionString = "Data Source=localhost; Initial Catalog=RealPropertySystemDev; Trusted_Connection=True;";
+$connectionString = "Data Source=localhost; Initial Catalog=TestDB; Trusted_Connection=True;";
 
-# Generate a DDL SQL script with create tabel statements.
+# Generate a DDL SQL script with create table statements.
 function buildTables($inputPath, $sqlOutputPath, $ext, $delimiter, $includeSubfolders, $schema, $defaultSqlType){
     $success = $false;
     $writer = New-Object EasyCsvLib.SqlTableBuilder($inputPath, $ext, $delimiter, $includeSubfolders);
@@ -43,7 +45,7 @@ function importCsv($path, $tableName, $delimiter){
 
 
 # Build the DDL script.
-$success = buildTables $csvSourceFolder $sqlOutputPath $extension $delimiter $includeSubFolders $schema "nvarchar(255)";
+$success = buildTables $csvSourceFolder $sqlOutputPath $extension $delimiter $includeSubFolders $schema $defaultSqlType;
 echo "Build success: $success";
 
 
@@ -53,15 +55,17 @@ if($success){
     echo "Executed DDL: $success";
 }
 
-
 #Import the CSVs
-$files = Get-ChildItem $csvSourceFolder;
-
-for($i = 0; $i -lt $files.Count; $i++){
-    $file = $files[$i];
-    $filePath = $file.FullName;
-    $tableName = $file.Name -replace "(.|)\w+$", "";
+if($success){
     
-    echo $tableName;
-    $success = importCsv $filePath $tableName $delimiter;
+    $files = Get-ChildItem $csvSourceFolder;
+
+    for($i = 0; $i -lt $files.Count; $i++){
+        $file = $files[$i];
+        $filePath = $file.FullName;
+        $tableName = $file.Name -replace "(.|)\w+$", "";
+    
+        echo $tableName;
+        $success = importCsv $filePath $tableName $delimiter;
+    }
 }
