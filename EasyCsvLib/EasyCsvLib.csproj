@@ -45,6 +45,7 @@
     <Compile Include="CsvWriter.cs" />
     <Compile Include="Executioner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SqlTableBuilder.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

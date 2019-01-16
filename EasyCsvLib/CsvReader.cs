@@ -27,6 +27,9 @@ namespace EasyCsvLib
 
     public class CsvReader : IDisposable, ICsvReader
     {
+
+        #region class vars
+
         private string _error = null;
         public string Error
         {
@@ -39,21 +42,6 @@ namespace EasyCsvLib
                 _error = value;
             }
         }
-
-        // Matches strings and strings that have quotes around them and include embedded delimiters.
-        private Regex _rxCsv = null;
-        protected Regex RxCsv
-        {
-            get
-            {
-                if(_rxCsv == null)
-                    _rxCsv = new Regex(_delimiter + "(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))", RegexOptions.Multiline);
-
-                return _rxCsv;
-            }
-        }
-
-        private Regex _rxStripQuotes = new Regex("(^\"|\"$)");
 
         private DataTable _dataTable = new DataTable();
         public DataTable DataTable
@@ -120,6 +108,8 @@ namespace EasyCsvLib
             }
         }
 
+        #endregion
+
         /// <summary>
         /// CSV Reader
         /// Requires column headers that match the destination table column names exactly.
@@ -159,7 +149,7 @@ namespace EasyCsvLib
                 throw new Exception(_error);
             }
 
-            string[] colNames = GetColNames(lines);
+            string[] colNames = c.GetColNames(lines, _delimiter);
 
             CreateDataTable(colNames);
             if (_error != null)
@@ -179,26 +169,6 @@ namespace EasyCsvLib
         {
             return new CsvReader(path, tableName, connectionString, delimiter.ToString());
         }
-
-        /// <summary>
-        /// Gets the column names from the header in the CSV file.
-        /// </summary>
-        /// <param name="lines"></param>
-        /// <returns></returns>
-        protected virtual string[] GetColNames(string[] lines)
-        {
-            if (lines.Length > 0)
-            {
-                string[] colNames = RxCsv.Split(lines[0]);
-                for (int i=0; i < colNames.Length; i++)
-                    colNames[i] = _rxStripQuotes.Replace(colNames[i], "").Trim();
-
-                return colNames;
-            }
-
-            return new string[0];
-        }
-
 
         /// <summary>
         /// Creates an empty DataTable object from the imported CSV.
@@ -261,7 +231,7 @@ namespace EasyCsvLib
                     if (rowCount > 0)
                     {
                         DataRow row = _dataTable.NewRow();
-                        string[] values = RxCsv.Split(line);
+                        string[] values = c.GetRxCsv(_delimiter).Split(line);
 
                         if (values.Length == 0)
                             continue;
@@ -302,7 +272,7 @@ namespace EasyCsvLib
         protected virtual void WriteValue(string value, DataRow row, DataColumn col)
         {
             string colName = col.ColumnName;
-            string val = _rxStripQuotes.Replace(value, "").Trim();
+            string val = c.GetRxStripQuotes().Replace(value, "").Trim();
 
             if (c.IsEmpty(val))
             {

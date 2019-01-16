@@ -26,6 +26,9 @@ namespace EasyCsvLib
 
     public class CsvWriter : IDisposable, ICsvWriter
     {
+
+        #region class vars
+
         private string _error = null;
         public string Error
         {
@@ -116,6 +119,8 @@ namespace EasyCsvLib
                 _isStoredProcedure = value;
             }
         }
+
+        #endregion
 
         /// <summary>
         /// CSV Writer

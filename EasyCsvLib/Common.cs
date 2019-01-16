@@ -3,6 +3,7 @@ using System.Text;
 using System.Data;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace EasyCsvLib
 {
@@ -53,6 +54,117 @@ namespace EasyCsvLib
 
             File.WriteAllText(outputPath, csv.ToString());
             return File.Exists(outputPath);
+        }
+
+        /// <summary>
+        /// Gets the column names from the header in the CSV file.
+        /// </summary>
+        /// <param name="lines"></param>
+        /// <returns></returns>
+        public static string[] GetColNames(string[] lines, string delimiter)
+        {
+            if (lines.Length > 0)
+            {
+                string[] colNames = Common.GetRxCsv(delimiter).Split(lines[0]);
+                for (int i = 0; i < colNames.Length; i++)
+                    colNames[i] = Common.GetRxStripQuotes().Replace(colNames[i], "").Trim();
+
+                return colNames;
+            }
+
+            return new string[0];
+        }
+
+        private static Regex _rxCsv = null;
+        public static Regex GetRxCsv(string delimiter)
+        {
+            if (_rxCsv == null)
+                _rxCsv = new Regex(delimiter + "(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))", RegexOptions.Multiline);
+
+            return _rxCsv;
+        }
+
+        private static Regex _rxStripQuotes = null;
+        public static Regex GetRxStripQuotes()
+        {
+            if (_rxStripQuotes == null)
+                _rxStripQuotes = new Regex("(^\"|\"$)");
+
+            return _rxStripQuotes;
+        }
+
+        /// <summary>
+        /// Create a DDL statement to create a table from an array of column names. 
+        /// </summary>
+        /// <param name="colNames"></param>
+        /// <param name="defaultSqlDataType"></param>
+        /// <returns></returns>
+        public static string CreateTableDdl(string tableName, string[] colNames, string schema = "dbo", string defaultSqlDataType = "nvarchar(255)")
+        {
+            int columnCount = colNames.Length;
+            string nl = Environment.NewLine;
+            var sb = new StringBuilder();
+
+            sb.AppendFormat("IF OBJECT_ID('[{0}].[{1}]') IS NOT NULL{2}", schema, tableName, nl);
+            sb.AppendFormat("    DROP TABLE [{0}].[{1}];{2}{2}", schema, tableName, nl);
+
+            sb.AppendFormat("CREATE TABLE [{0}].[{1}]({2}", schema, tableName, nl);
+
+            int i = 0;
+            int genericCount = 0;
+
+            foreach(string c in colNames)
+            {
+                string colName = null;
+                if (Common.IsEmpty(c))
+                {
+                    genericCount++;
+                    colName = string.Concat("Column_", genericCount);
+                }
+                else
+                {
+                    colName = c;
+                }
+
+                string ending = (i < columnCount - 1) ? string.Concat(",", nl) : nl;
+                sb.AppendFormat("    {0} {1} NULL{2}", string.Concat("[", colName, "]"), defaultSqlDataType, ending);
+
+                i++;
+            }
+
+            sb.AppendFormat(");{0}{0}", nl);
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Gets a collection of files from a provided direcotry path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="extensionFilter"></param>
+        /// <param name="folderless"></param>
+        public static List<String> ReadFiles(string path, string extensionFilter = "csv", bool includeSubfolders = false)
+        {
+            if (!Directory.Exists(path))
+                throw new Exception("The provided directory path does not exist.");
+
+            List<String> files = new List<String>();
+
+            try
+            {
+                foreach (string f in Directory.GetFiles(path))
+                    files.Add(f);
+                
+                foreach (string d in Directory.GetDirectories(path))
+                    files.AddRange(ReadFiles(d, extensionFilter, includeSubfolders));
+                
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return files;
         }
 
         #region Parsers
@@ -183,6 +295,6 @@ namespace EasyCsvLib
         }
 
         #endregion Parsers
-
+    
     }
 }
