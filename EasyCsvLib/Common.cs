@@ -156,7 +156,11 @@ namespace EasyCsvLib
 
             try
             {
-                foreach (string f in Directory.GetFiles(path))
+                string searchPattern = Common.IsEmpty(extensionFilter) ? null 
+                    : extensionFilter.StartsWith("*.") ? extensionFilter 
+                    : string.Concat("*.", extensionFilter);
+
+                foreach (string f in Directory.GetFiles(path, searchPattern))
                     files.Add(f);
 
                 if (includeSubfolders)
