@@ -63,13 +63,29 @@ namespace EasyCsvLib
         /// <returns></returns>
         public static string[] GetColNames(string[] lines, string delimiter)
         {
+            var columnNames = new List<string>();
+
             if (lines.Length > 0)
             {
                 string[] colNames = Common.GetRxCsv(delimiter).Split(lines[0]);
                 for (int i = 0; i < colNames.Length; i++)
                     colNames[i] = Common.GetRxStripQuotes().Replace(colNames[i], "").Trim();
 
-                return colNames;
+                int genericCount = 0;
+                foreach (string col in colNames)
+                {
+                    if (Common.IsEmpty(col))
+                    {
+                        genericCount++;
+                        columnNames.Add(string.Concat("Column_", genericCount));
+                    }
+                    else
+                    {
+                        columnNames.Add(col);
+                    }                    
+                }
+
+                return columnNames.ToArray();
             }
 
             return new string[0];
@@ -111,21 +127,9 @@ namespace EasyCsvLib
             sb.AppendFormat("CREATE TABLE [{0}].[{1}]({2}", schema, tableName, nl);
 
             int i = 0;
-            int genericCount = 0;
 
-            foreach(string c in colNames)
+            foreach(string colName in colNames)
             {
-                string colName = null;
-                if (Common.IsEmpty(c))
-                {
-                    genericCount++;
-                    colName = string.Concat("Column_", genericCount);
-                }
-                else
-                {
-                    colName = c;
-                }
-
                 string ending = (i < columnCount - 1) ? string.Concat(",", nl) : nl;
                 sb.AppendFormat("    {0} {1} NULL{2}", string.Concat("[", colName, "]"), defaultSqlDataType, ending);
 
