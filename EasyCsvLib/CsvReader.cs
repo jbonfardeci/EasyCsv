@@ -272,7 +272,7 @@ namespace EasyCsvLib
         protected virtual void WriteValue(string value, DataRow row, DataColumn col)
         {
             string colName = col.ColumnName;
-            string val = c.GetRxStripQuotes().Replace(value, "").Trim();
+            string val = c.GetRxStripQuotes().Replace(value, "").TrimEnd();
 
             if (c.IsEmpty(val))
             {
