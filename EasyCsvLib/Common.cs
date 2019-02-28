@@ -18,15 +18,22 @@ namespace EasyCsvLib
         /// <returns></returns>
         public static bool OutputToCsv(DataTable dataTable, string outputPath, string delimiter = ",")
         {
-            StringBuilder csv = new StringBuilder();
+            string csv = DataTableToCsv(dataTable, delimiter);
+            File.WriteAllText(outputPath, csv);
+            return File.Exists(outputPath);
+        }
+
+        public static string DataTableToCsv(DataTable dataTable, string delimiter = ",")
+        {
+            StringBuilder sb = new StringBuilder();
             DataColumnCollection cols = dataTable.Columns;
             int columnCount = cols.Count;
 
             for (int i = 0; i < columnCount; i++)
             {
                 string colName = cols[i].ColumnName;
-                string ending = (i < columnCount-1) ? delimiter : Environment.NewLine;
-                csv.AppendFormat("{0}{1}", colName, ending);
+                string ending = (i < columnCount - 1) ? delimiter : Environment.NewLine;
+                sb.AppendFormat("{0}{1}", colName, ending);
             }
 
             foreach (DataRow row in dataTable.Rows)
@@ -47,13 +54,12 @@ namespace EasyCsvLib
                     else
                         val = value.ToString();
 
-                    string ending = (j < columnCount-1) ? delimiter : Environment.NewLine;
-                    csv.AppendFormat("{0}{1}", val, ending);
+                    string ending = (j < columnCount - 1) ? delimiter : Environment.NewLine;
+                    sb.AppendFormat("{0}{1}", val, ending);
                 }
             }
 
-            File.WriteAllText(outputPath, csv.ToString());
-            return File.Exists(outputPath);
+            return sb.ToString();
         }
 
         /// <summary>
