@@ -127,8 +127,7 @@ namespace EasyCsvLib
             string nl = Environment.NewLine;
             var sb = new StringBuilder();
 
-            sb.AppendFormat("IF OBJECT_ID('[{0}].[{1}]') IS NOT NULL{2}", schema, tableName, nl);
-            sb.AppendFormat("    DROP TABLE [{0}].[{1}];{2}{2}", schema, tableName, nl);
+            sb.AppendFormat("DROP TABLE IF EXISTS [{0}].[{1}];{2}{2}", schema, tableName, nl);
 
             sb.AppendFormat("CREATE TABLE [{0}].[{1}]({2}", schema, tableName, nl);
 
