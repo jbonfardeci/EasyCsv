@@ -190,6 +190,7 @@ namespace EasyCsvLib
         public static Regex RxBoolTrue = new Regex("(true|yes|1)", RegexOptions.IgnoreCase);
         public static Regex RxBoolFalse = new Regex("(false|no|0)", RegexOptions.IgnoreCase);
         public static Regex RxDateTime = new Regex("[^0-9\\-\\/]", RegexOptions.IgnoreCase);
+        public static Regex RxNull = new Regex("null", RegexOptions.IgnoreCase);
 
         /// <summary>
         /// Check if value is empty.
@@ -198,7 +199,7 @@ namespace EasyCsvLib
         /// <returns></returns>
         public static bool IsEmpty(string value)
         {
-            return string.IsNullOrEmpty(value) || string.IsNullOrWhiteSpace(value);
+            return string.IsNullOrEmpty(value) || string.IsNullOrWhiteSpace(value) || RxNull.IsMatch(value);
         }
 
         /// <summary>

@@ -12,7 +12,7 @@ namespace EasyCsvLib
 {
     public interface ICsvReader
     {
-        long ImportCsv();
+        long ImportCsv(int timeout = 300);
         string Error { get; }
         DataTable DataTable { get; }
         string TableName { get; set; }
@@ -108,6 +108,13 @@ namespace EasyCsvLib
             }
         }
 
+        private int _skipHeaderRows = 0;
+        public int SkipHeaderRows
+        {
+            get { return _skipHeaderRows;  }
+            set { _skipHeaderRows = value; }
+        }
+
         #endregion
 
         /// <summary>
@@ -121,7 +128,7 @@ namespace EasyCsvLib
         /// <param name="tableName"></param>
         /// <param name="connectionString"></param>
         /// <param name="delimiter"></param>
-        public CsvReader(string path, string tableName, string connectionString, string delimiter = ",")
+        public CsvReader(string path, string tableName, string connectionString, string delimiter = ",", int timeout = 300, int skipHeaderRows = 0)
         {
             if(c.IsEmpty(path))
                 _error = "Parameter 'path' is required.";
@@ -141,6 +148,7 @@ namespace EasyCsvLib
             _tableName = tableName;
             _connectionString = connectionString;
             _path = path;
+            _skipHeaderRows = skipHeaderRows;
 
             string[] lines = File.ReadAllLines(path);
             if (lines.Length <= 1)
@@ -151,7 +159,7 @@ namespace EasyCsvLib
 
             string[] colNames = c.GetColNames(lines, _delimiter);
 
-            CreateDataTable(colNames);
+            CreateDataTable();
             if (_error != null)
                 throw new Exception("Error creating DataTable: " + _error);
 
@@ -174,7 +182,7 @@ namespace EasyCsvLib
         /// Creates an empty DataTable object from the imported CSV.
         /// </summary>
         /// <param name="colNames"></param>
-        protected virtual void CreateDataTable(string[] colNames)
+        protected virtual void CreateDataTable()
         {
             SqlCommand cmd = new SqlCommand
             {
@@ -228,7 +236,7 @@ namespace EasyCsvLib
                     if (c.IsEmpty(line))
                         continue;
                     
-                    if (rowCount > 0)
+                    if (rowCount > _skipHeaderRows)
                     {
                         DataRow row = _dataTable.NewRow();
                         string[] values = c.GetRxCsv(_delimiter).Split(line);
@@ -330,8 +338,9 @@ namespace EasyCsvLib
         /// Import the CSV to the database table via SqlBulkCopy with a transaction.
         /// </summary>
         /// <returns></returns>
-        public virtual long ImportCsv()
+        public virtual long ImportCsv(int timeout = 300)
         {
+            Console.WriteLine(string.Format("Timeout = {0}", timeout));
 
             long rowCount = 0;
             if(_dataTable.Rows.Count == 0)
@@ -352,6 +361,7 @@ namespace EasyCsvLib
                     bulkCopy.DestinationTableName = _tableName;
                     bulkCopy.SqlRowsCopied += (sender, eventArgs) => rowCount += eventArgs.RowsCopied;
                     bulkCopy.NotifyAfter = _dataTable.Rows.Count;
+                    bulkCopy.BulkCopyTimeout = timeout;
 
                     try
                     {
