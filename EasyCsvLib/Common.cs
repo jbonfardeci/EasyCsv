@@ -4,6 +4,7 @@ using System.Data;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EasyCsvLib
 {
@@ -62,39 +63,34 @@ namespace EasyCsvLib
             return sb.ToString();
         }
 
+        public static string[] GetColNamesFromCsv(string path, string delimiter)
+        {
+            string line = File.ReadLines(path).FirstOrDefault();
+            return SplitColNames(line, delimiter);
+        }
+
         /// <summary>
         /// Gets the column names from the header in the CSV file.
         /// </summary>
         /// <param name="lines"></param>
         /// <returns></returns>
-        public static string[] GetColNames(string[] lines, string delimiter)
+        public static string[] SplitColNames(string colNames, string delimiter)
         {
-            var columnNames = new List<string>();
+            var _columnNames = new List<string>();
 
-            if (lines.Length > 0)
+            string[] _colNames = Common.GetRxCsv(delimiter).Split(colNames);
+
+            foreach(string colName in _colNames)
             {
-                string[] colNames = Common.GetRxCsv(delimiter).Split(lines[0]);
-                for (int i = 0; i < colNames.Length; i++)
-                    colNames[i] = Common.GetRxStripQuotes().Replace(colNames[i], "").Trim();
+                string col = Common.GetRxStripQuotes().Replace(colName, "").Trim();
 
-                int genericCount = 0;
-                foreach (string col in colNames)
-                {
-                    if (Common.IsEmpty(col))
-                    {
-                        genericCount++;
-                        columnNames.Add(string.Concat("Column_", genericCount));
-                    }
-                    else
-                    {
-                        columnNames.Add(col);
-                    }                    
-                }
-
-                return columnNames.ToArray();
+                if (!col.StartsWith("["))
+                    _columnNames.Add("[" + col + "]");
+                else
+                    _columnNames.Add(col);
             }
 
-            return new string[0];
+            return _columnNames.ToArray();
         }
 
         private static Regex _rxCsv = null;
@@ -121,7 +117,7 @@ namespace EasyCsvLib
         /// <param name="colNames"></param>
         /// <param name="defaultSqlDataType"></param>
         /// <returns></returns>
-        public static string CreateTableDdl(string tableName, string[] colNames, string schema = "dbo", string defaultSqlDataType = "nvarchar(255)")
+        public static string CreateTableDdl(string tableName, string[] colNames, string[] sqlTypes, string schema = "dbo")
         {
             int columnCount = colNames.Length;
             string nl = Environment.NewLine;
@@ -136,7 +132,7 @@ namespace EasyCsvLib
             foreach(string colName in colNames)
             {
                 string ending = (i < columnCount - 1) ? string.Concat(",", nl) : nl;
-                sb.AppendFormat("    {0} {1} NULL{2}", string.Concat("[", colName, "]"), defaultSqlDataType, ending);
+                sb.AppendFormat("    {0} {1} NULL{2}", string.Concat("[", colName, "]"), sqlTypes[i], ending);
 
                 i++;
             }
@@ -200,6 +196,32 @@ namespace EasyCsvLib
         public static bool IsEmpty(string value)
         {
             return string.IsNullOrEmpty(value) || string.IsNullOrWhiteSpace(value) || RxNull.IsMatch(value);
+        }
+
+        public static char? ConvertToChar(string val)
+        {
+            if (IsEmpty(val))
+                return null;
+
+            char c;
+
+            if (char.TryParse(RxInt.Replace(val, ""), out c))
+                return c;
+
+            return null;
+        }
+
+        public static float? ConvertToFloat(string val)
+        {
+            if (IsEmpty(val))
+                return null;
+
+            float n;
+
+            if (float.TryParse(RxInt.Replace(val, ""), out n))
+                return n;
+
+            return null;
         }
 
         /// <summary>

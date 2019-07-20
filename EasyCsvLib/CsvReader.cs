@@ -12,7 +12,7 @@ namespace EasyCsvLib
 {
     public interface ICsvReader
     {
-        long ImportCsv(int timeout = 300);
+        long ImportCsv();
         string Error { get; }
         DataTable DataTable { get; }
         string TableName { get; set; }
@@ -108,11 +108,43 @@ namespace EasyCsvLib
             }
         }
 
-        private int _skipHeaderRows = 0;
-        public int SkipHeaderRows
+        private int _headerRowCount = 0;
+        public int HeaderRowCount
         {
-            get { return _skipHeaderRows;  }
-            set { _skipHeaderRows = value; }
+            get { return _headerRowCount; }
+            set { _headerRowCount = value; }
+        }
+
+        private string[] _colNames = null;
+        public string[] ColNames
+        {
+            get { return this._colNames; }
+            set { this._colNames = value; }
+        }
+
+        private int _batchSize = 1000;
+        public int BatchSize {
+            get { return _batchSize; }
+            set { _batchSize = value; }
+        }
+
+        private int _timeOut = 300;
+        public int TimeOut
+        {
+            get { return _timeOut; }
+            set { _timeOut = value; }
+        }
+
+        public long TotalDataRows { get; set; }
+        public long RowsWritten { get; set; }
+
+        public int BatchCount { get; set; }
+
+        public bool _verbose = false;
+        public bool Verbose
+        {
+            get { return _verbose;  }
+            set { _verbose = value; }
         }
 
         #endregion
@@ -128,7 +160,7 @@ namespace EasyCsvLib
         /// <param name="tableName"></param>
         /// <param name="connectionString"></param>
         /// <param name="delimiter"></param>
-        public CsvReader(string path, string tableName, string connectionString, string delimiter = ",", int timeout = 300, int skipHeaderRows = 0)
+        public CsvReader(string path, string tableName, string connectionString, string delimiter = ",", int headerRowCount = 1, string colNames = null, int batchSize = 1000, int timeOut = 300)
         {
             if(c.IsEmpty(path))
                 _error = "Parameter 'path' is required.";
@@ -138,44 +170,33 @@ namespace EasyCsvLib
                 _error = "Parameter 'tableName' is required.";
             else if (c.IsEmpty(connectionString))
                 _error = "Parameter 'connectionString' is required.";
-            else if (c.IsEmpty(delimiter))
-                _error = "Parameter 'delimiter' is required.";
 
             if (_error != null)
                 throw new Exception(_error);
 
-            _delimiter = delimiter;
+            _path = path;
             _tableName = tableName;
             _connectionString = connectionString;
-            _path = path;
-            _skipHeaderRows = skipHeaderRows;
+            _delimiter = delimiter;
+            _colNames = !c.IsEmpty(colNames) ? c.SplitColNames(colNames, _delimiter) : c.GetColNamesFromCsv(_path, _delimiter);
+            _batchSize = batchSize;
+            _timeOut = timeOut;
+            _headerRowCount = headerRowCount;
+        }
 
-            string[] lines = File.ReadAllLines(path);
-            if (lines.Length <= 1)
-            {
-                _error = string.Format("File {0} is empty.", Path.GetFileName(path));
-                throw new Exception(_error);
-            }
+        public static ICsvReader Create(string path, string tableName, string connectionString, string delimiter = ",", int headerRowCount = 1, string colNames = null, int batchSize = 1000, int timeOut = 300)
+        {
+            return new CsvReader(path, tableName, connectionString, delimiter, headerRowCount, colNames, batchSize, timeOut);
+        }
 
-            string[] colNames = c.GetColNames(lines, _delimiter);
-
+        public virtual long ImportCsv()
+        {
             CreateDataTable();
+
             if (_error != null)
                 throw new Exception("Error creating DataTable: " + _error);
 
-            FillDataTable(colNames, lines);
-            if (_error != null)
-                throw new Exception("Error filling DataTable: " + _error);
-        }
-
-        public static ICsvReader Create(string path, string tableName, string connectionString, string delimiter = ",")
-        {
-            return new CsvReader(path, tableName, connectionString, delimiter);
-        }
-
-        public static ICsvReader Create(string path, string tableName, string connectionString, char delimiter = ',')
-        {
-            return new CsvReader(path, tableName, connectionString, delimiter.ToString());
+            return ReadCsv();
         }
 
         /// <summary>
@@ -188,11 +209,17 @@ namespace EasyCsvLib
             {
                 Connection = new SqlConnection(_connectionString),
                 CommandType = CommandType.Text,
-                CommandText = string.Format("SELECT TOP 1 * FROM {0}", _tableName)
             };
+
             SqlDataAdapter da = new SqlDataAdapter(cmd);
+
             try
             {
+                if (_dataTable == null)
+                    _dataTable = new DataTable();
+
+                string select = String.Join(", ", this._colNames);
+                cmd.CommandText = string.Format("SELECT TOP 1 {0} FROM {1}", select, _tableName);
                 cmd.Connection.Open();
                 da.Fill(_dataTable);
                 cmd.Connection.Close();
@@ -214,52 +241,138 @@ namespace EasyCsvLib
             }
         }
 
+        /// <summary>
+        /// Read lines from CSV, write to the database one batch at a time. 
+        /// </summary>
+        protected virtual long ReadCsv()
+        {
+            int batchCount = 0;
+            int batchSize = _batchSize;
+            long lineCount = 0;
+            long dataRowCount = 0;
+            long rowsWritten = 0;
+            List<string> dataRows = new List<string>();
+
+            try
+            {
+                long totalDataRows = File.ReadLines(_path).LongCount() - _headerRowCount;
+                long totalBatches = totalDataRows / batchSize;
+                long remainder = totalDataRows % batchSize;
+                this.TotalDataRows = totalDataRows;
+
+                if (_verbose)
+                {
+                    Console.WriteLine(string.Format("Total data rows: {0}", totalDataRows));
+                    Console.WriteLine(string.Format("Batch size: {0}", batchSize));
+                    Console.WriteLine(string.Format("Total batches: {0}", totalBatches));
+                    Console.WriteLine(string.Format("Remainder: {0}", remainder));
+                }
+
+                foreach (string line in File.ReadLines(_path))
+                {
+                    lineCount++;
+
+                    // Skip header row(s) if it has one.
+                    if (lineCount <= _headerRowCount)
+                        continue;
+
+                    dataRows.Add(line);
+                    dataRowCount++;
+
+                    // Write data to database if we reach the batch size.
+                    long remaining = (totalDataRows - (batchSize*batchCount));
+
+                    if (   
+                        (totalDataRows < batchSize && dataRows.Count == totalDataRows) ||
+                        (batchCount < totalBatches && dataRows.Count == batchSize) ||
+                        (remaining < batchSize && dataRows.Count == remainder)
+                    ){
+                        
+                        batchCount++;
+                        rowsWritten += ImportToDatabase(dataRows);
+
+                        if (_verbose)
+                        {
+                            Console.WriteLine(string.Format("Remaining data rows: {0}", remaining));
+                            Console.WriteLine(string.Format("Current batch count: {0}", batchCount));
+                            Console.WriteLine(string.Format("Rows written: {0}", rowsWritten));
+                        }
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                dataRows.Clear();
+                dataRows = null;
+                this.RowsWritten = rowsWritten;
+                this.BatchCount = batchCount;
+            }
+
+            return dataRowCount;
+        }
 
         /// <summary>
         /// Fill the DataTable object with the CSV data.
         /// </summary>
         /// <param name="colNames"></param>
-        /// <param name="lines"></param>
-        protected virtual void FillDataTable(string[] colNames, string[] lines)
+        /// <param name="dataRows"></param>
+        protected virtual void FillDataTable(List<string> dataRows)
         {
-            if(colNames.Length == 0)
-                throw new Exception("colNames is empty.");
-
-            if (_dataTable.Columns.Count == 0)
-                throw new Exception("DataTable columns are empty.");
-
             int rowCount = 0;
+            if (dataRows == null)
+                throw new Exception("Error: argument List<string> dataRows is null");
+
+            if(_dataTable == null)
+                throw new Exception("Error: DataTable is null");
+
             try
             {
-                foreach(string line in lines)
+                string[] colNames = this._colNames;
+
+                if(colNames == null)
+                    throw new Exception("Error: colNames is null");
+
+                foreach (string line in dataRows)
                 {
                     if (c.IsEmpty(line))
                         continue;
-                    
-                    if (rowCount > _skipHeaderRows)
+
+                    try
                     {
                         DataRow row = _dataTable.NewRow();
+
+                        if (row == null)
+                            Console.WriteLine("Error: DataRow is null.");
+
                         string[] values = c.GetRxCsv(_delimiter).Split(line);
+
+                        if (values == null)
+                            Console.WriteLine("Error: DataRow values is null.");
 
                         if (values.Length == 0)
                             continue;
 
-                        for(int i=0; i < colNames.Length; i++)
+                        for (int i = 0; i < colNames.Length; i++)
                         {
                             string colName = colNames[i];
-
-                            if (_dataTable.Columns.IndexOf(colName) < 0)
-                                continue;
-
                             string val = values[i];
-                            DataColumn col = _dataTable.Columns[colName];
+                            DataColumn col = _dataTable.Columns[colName.Replace("[", "").Replace("]", "")];
+
                             if (col == null)
-                                throw new Exception("Col " + colName + " not found.");
+                                Console.WriteLine("Error: Could not find column name " + colName);
 
                             WriteValue(val, row, col);
                         }
 
                         _dataTable.Rows.Add(row);
+                    }
+                    catch(NullReferenceException ex)
+                    {
+                        throw ex;
                     }
 
                     rowCount++;
@@ -296,18 +409,21 @@ namespace EasyCsvLib
                         row[colName] = n.Value;
 
                     break;
+
                 case "System.Int64":
                     long? l = c.ConvertToInt64(val);
                     if (l.HasValue)
                         row[colName] = l.Value;
 
                     break;
+
                 case "System.Int16":
                     short? s = c.ConvertToInt16(val);
                     if (s.HasValue)
                         row[colName] = s.Value;
 
                     break;
+
                 case "System.Double":
                 case "System.Decimal":
                     decimal? d = c.ConvertToDecimal(val);
@@ -315,18 +431,35 @@ namespace EasyCsvLib
                         row[colName] = d.Value;
 
                     break;
+
+                case "System.Single": //float
+                    float? f = c.ConvertToFloat(val);
+                    if (f.HasValue)
+                        row[colName] = f.Value;
+
+                    break;
+
                 case "System.Boolean":
                     bool? b = c.ConvertToBoolean(val);
                     if (b.HasValue)
                         row[colName] = b.Value;
 
                     break;
+
                 case "System.DateTime":
                     DateTime? date = c.ConvertToDateTime(val);
                     if (date.HasValue)
                         row[colName] = date.Value;
 
                     break;
+
+                case "System.Char":
+                    char? ch = c.ConvertToChar(val);
+                    if (ch.HasValue)
+                        row[colName] = ch.Value;
+
+                    break;
+
                 case "System.String":
                 default:
                     row[colName] = val;
@@ -338,21 +471,23 @@ namespace EasyCsvLib
         /// Import the CSV to the database table via SqlBulkCopy with a transaction.
         /// </summary>
         /// <returns></returns>
-        public virtual long ImportCsv(int timeout = 300)
+        protected virtual long ImportToDatabase(List<string> dataRows)
         {
-            Console.WriteLine(string.Format("Timeout = {0}", timeout));
+            //Console.WriteLine(string.Format("Writing to database. Timeout = {0}", _timeOut));
 
             long rowCount = 0;
-            if(_dataTable.Rows.Count == 0)
-            {
-                _error = "DataTable is empty.";
-                return rowCount;
-            }
-
             SqlConnection conn = new SqlConnection(_connectionString);
 
             try
             {
+                FillDataTable(dataRows);
+
+                if (_verbose)
+                {
+                    Console.WriteLine(string.Format("Datatable has {0} rows.", _dataTable.Rows.Count));
+                    Console.WriteLine(string.Format("Database timeout is {0}.", _timeOut));
+                }
+
                 conn.Open();
                 var transaction = conn.BeginTransaction();
 
@@ -361,7 +496,7 @@ namespace EasyCsvLib
                     bulkCopy.DestinationTableName = _tableName;
                     bulkCopy.SqlRowsCopied += (sender, eventArgs) => rowCount += eventArgs.RowsCopied;
                     bulkCopy.NotifyAfter = _dataTable.Rows.Count;
-                    bulkCopy.BulkCopyTimeout = timeout;
+                    bulkCopy.BulkCopyTimeout = _timeOut;
 
                     try
                     {
@@ -370,10 +505,14 @@ namespace EasyCsvLib
 
                         bulkCopy.WriteToServer(_dataTable);
                         transaction.Commit();
+
+                        if(_verbose)
+                            Console.WriteLine("Committed database transaction." );
                     }
                     catch (Exception ex)
                     {
                         _error = ex.ToString();
+                        Console.WriteLine("Error: " + _error);
                     }
                 }
                 conn.Close();
@@ -381,6 +520,8 @@ namespace EasyCsvLib
             catch (Exception ex)
             {
                 _error = ex.ToString();
+                Console.WriteLine("Error: " + _error);
+                //throw ex;
             }
             finally
             {
@@ -389,6 +530,9 @@ namespace EasyCsvLib
 
                 conn.Dispose();
                 conn = null;
+
+                _dataTable.Clear();
+                dataRows.Clear(); // clear all data, load next batch.
             }
 
             return rowCount;
