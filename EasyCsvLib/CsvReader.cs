@@ -506,11 +506,10 @@ namespace EasyCsvLib
         /// <summary>
         /// Import the CSV to the database table via SqlBulkCopy with a transaction.
         /// </summary>
+        /// <param name="dataRows"></param>
         /// <returns></returns>
         protected virtual long ImportToDatabase(List<string> dataRows)
         {
-            //Console.WriteLine(string.Format("Writing to database. Timeout = {0}", _timeOut));
-
             long rowCount = 0;
             SqlConnection conn = new SqlConnection(_connectionString);
 
@@ -543,7 +542,7 @@ namespace EasyCsvLib
                         transaction.Commit();
 
                         if(_verbose)
-                            Console.WriteLine("Committed database transaction." );
+                            Console.WriteLine("Commited database transaction." );
                     }
                     catch (Exception ex)
                     {
