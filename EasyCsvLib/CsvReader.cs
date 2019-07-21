@@ -13,16 +13,23 @@ namespace EasyCsvLib
     public interface ICsvReader
     {
         long ImportCsv();
+        long GetTotalDataRowCount();
+        bool OutputTableDefinition(string outputPath);
+        void Dispose();
         string Error { get; }
         DataTable DataTable { get; }
         string TableName { get; set; }
         string Delimiter { get; set; }
         string ConnectionString { get; set; }
         string FilePath { get; set; }
-        bool OutputTableDefinition(string outputPath);
-        bool OutputToCsv(string outputPath, char delimiter = ',');
-        bool OutputToCsv(string outputPath, string delimiter = ",");
-        void Dispose();  
+        int HeaderRowCount { get; set; }
+        string[] ColNames { get; set; }
+        int BatchSize { get; set; }
+        int TimeOut { get; set; }
+        long TotalDataRows { get; set; }
+        long RowsWritten { get; set; }
+        int BatchCount { get; set; }
+        bool Verbose { get; set; }
     }
 
     public class CsvReader : IDisposable, ICsvReader
@@ -150,30 +157,18 @@ namespace EasyCsvLib
         #endregion
 
         /// <summary>
-        /// CSV Reader
-        /// Requires column headers that match the destination table column names exactly.
-        /// 1. Read CSV.
-        /// 2. Convert to DataTable.
-        /// 3. Write to database.
+        /// Create instance of CsvReader. 
         /// </summary>
         /// <param name="path"></param>
         /// <param name="tableName"></param>
         /// <param name="connectionString"></param>
         /// <param name="delimiter"></param>
-        public CsvReader(string path, string tableName, string connectionString, string delimiter = ",", int headerRowCount = 1, string colNames = null, int batchSize = 1000, int timeOut = 300)
+        /// <param name="headerRowCount"></param>
+        /// <param name="colNames"></param>
+        /// <param name="batchSize"></param>
+        /// <param name="timeOut"></param>
+        public CsvReader(string path = null, string tableName = null, string connectionString = null, string delimiter = ",", int headerRowCount = 1, string colNames = null, int batchSize = 1000, int timeOut = 300)
         {
-            if(c.IsEmpty(path))
-                _error = "Parameter 'path' is required.";
-            else if (!File.Exists(path))
-                _error = String.Format("{0} does not exist.", path);
-            else if (c.IsEmpty(tableName))
-                _error = "Parameter 'tableName' is required.";
-            else if (c.IsEmpty(connectionString))
-                _error = "Parameter 'connectionString' is required.";
-
-            if (_error != null)
-                throw new Exception(_error);
-
             _path = path;
             _tableName = tableName;
             _connectionString = connectionString;
@@ -184,19 +179,57 @@ namespace EasyCsvLib
             _headerRowCount = headerRowCount;
         }
 
-        public static ICsvReader Create(string path, string tableName, string connectionString, string delimiter = ",", int headerRowCount = 1, string colNames = null, int batchSize = 1000, int timeOut = 300)
+        /// <summary>
+        /// Create an instance of ICsvReader.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="tableName"></param>
+        /// <param name="connectionString"></param>
+        /// <param name="delimiter"></param>
+        /// <param name="headerRowCount"></param>
+        /// <param name="colNames"></param>
+        /// <param name="batchSize"></param>
+        /// <param name="timeOut"></param>
+        /// <returns></returns>
+        public static ICsvReader Create(string path = null, string tableName = null, string connectionString = null, string delimiter = ",", int headerRowCount = 1, string colNames = null, int batchSize = 1000, int timeOut = 300)
         {
             return new CsvReader(path, tableName, connectionString, delimiter, headerRowCount, colNames, batchSize, timeOut);
         }
 
+        /// <summary>
+        /// Get the total data row count (exluding header row(s)) of the CSV file.
+        /// </summary>
+        /// <returns></returns>
+        public virtual long GetTotalDataRowCount()
+        {
+            return File.ReadLines(_path).LongCount() - _headerRowCount;
+        }
+
+        /// <summary>
+        /// Read the CSV and import to the database.
+        /// Returns the number of rows successfully written.
+        /// </summary>
+        /// <returns></returns>
         public virtual long ImportCsv()
         {
-            CreateDataTable();
+            if (c.IsEmpty(_path))
+                _error = "Parameter 'path' is required.";
+            else if (!File.Exists(_path))
+                _error = String.Format("{0} does not exist.", _path);
+            else if (c.IsEmpty(_tableName))
+                _error = "Parameter 'tableName' is required.";
+            else if (c.IsEmpty(_connectionString))
+                _error = "Parameter 'connectionString' is required.";
+
+            if (_error != null)
+                throw new Exception(_error);
+
+            this.CreateDataTable();
 
             if (_error != null)
                 throw new Exception("Error creating DataTable: " + _error);
 
-            return ReadCsv();
+            return this.ReadCsv();
         }
 
         /// <summary>
@@ -242,10 +275,13 @@ namespace EasyCsvLib
         }
 
         /// <summary>
-        /// Read lines from CSV, write to the database one batch at a time. 
+        /// Read the CSV and import to the database.
+        /// Returns the number of rows successfully written.
         /// </summary>
+        /// <returns></returns>
         protected virtual long ReadCsv()
         {
+            int headerRowCount = _headerRowCount;
             int batchCount = 0;
             int batchSize = _batchSize;
             long lineCount = 0;
@@ -255,7 +291,7 @@ namespace EasyCsvLib
 
             try
             {
-                long totalDataRows = File.ReadLines(_path).LongCount() - _headerRowCount;
+                long totalDataRows = this.GetTotalDataRowCount();
                 long totalBatches = totalDataRows / batchSize;
                 long remainder = totalDataRows % batchSize;
                 this.TotalDataRows = totalDataRows;
@@ -273,7 +309,7 @@ namespace EasyCsvLib
                     lineCount++;
 
                     // Skip header row(s) if it has one.
-                    if (lineCount <= _headerRowCount)
+                    if (lineCount <= headerRowCount)
                         continue;
 
                     dataRows.Add(line);
@@ -289,7 +325,7 @@ namespace EasyCsvLib
                     ){
                         
                         batchCount++;
-                        rowsWritten += ImportToDatabase(dataRows);
+                        rowsWritten += this.ImportToDatabase(dataRows);
 
                         if (_verbose)
                         {
@@ -312,7 +348,7 @@ namespace EasyCsvLib
                 this.BatchCount = batchCount;
             }
 
-            return dataRowCount;
+            return rowsWritten;
         }
 
         /// <summary>
@@ -553,26 +589,6 @@ namespace EasyCsvLib
 
             File.WriteAllText(outputPath, sb.ToString());
             return File.Exists(outputPath);
-        }
-
-        /// <summary>
-        /// Output the DataTable to a CSV. 
-        /// </summary>
-        /// <param name="outputPath"></param>
-        /// <returns></returns>
-        public virtual bool OutputToCsv(string outputPath, char delimiter = ',')
-        {
-            return c.OutputToCsv(_dataTable, outputPath, delimiter.ToString());
-        }
-
-        /// <summary>
-        /// Output the DataTable to a CSV. 
-        /// </summary>
-        /// <param name="outputPath"></param>
-        /// <returns></returns>
-        public virtual bool OutputToCsv(string outputPath, string delimiter = ",")
-        {
-            return c.OutputToCsv(_dataTable, outputPath, delimiter);
         }
 
         /// <summary>
