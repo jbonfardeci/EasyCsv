@@ -4,7 +4,7 @@ Import and export CSVs the easy way.
 
 Main functionality:
 
-* Reads a CSV file, mapping values to correct data types, into an accessible DataTable object with the original database table schema. Writes to target table via SqlBulkCopy with a transaction.
+* Reads a CSV file, mapping values to correct data types. Streams batches of CSV data rows to target table via SqlBulkCopy with a transaction.
 * Writes ad-hoc or stored procedure query results into an accessible DataTable object. Writes to CSV file.
 
 ## Usage in C#
@@ -15,16 +15,22 @@ Import CSV into a database table.
 string connectionString = "Server=localhost;Database=myDatabaseName;Trusted_Connection=yes;";
 string path = @"C:\example.csv";
 string tableName = "dbo.TestTable";
-char delimiter = ','; // ',' by default
-long rowsAdded = 0;
-DataTable dataTable = null;
+string delimiter = ','; // ',' by default
+int headerRowCount = 1; // The number of header rows to skip. Set to 1 whether you use your own column names or the header in the CSV.
+string colNames = null; // You can use the column names in the CSV header or provide your own comma-delimited column names. They number and order must match the columns in the CSV.
+int batchSize = 1000; // Improt large (multi-GB) files in batch sizes of your choosing, streams in small chunks to the database.
+int timeOut = 300; // Set the database conneciton timeout. Increase for large files. Default is 5 minutes.
+long rowsWritten = 0;
+long totalDataRows = 0;
 
-using(ICsvReader reader = EasyCsvLib.CsvReader.Create(path: path, tableName: tableName, connectionString: connectionString, delimiter: ",")){
-    dataTable = reader.DataTable; // Just use the datatable for other operations or...
-    rowsAdded = reader.ImportCsv(); // ...import into the database table.
+using(ICsvReader reader = EasyCsvLib.CsvReader.Create(path, tableName, connectionString, delimiter, headerRowCount, colNames, batchSize, timeOut)){
+    reader.Verbose = false;
+    reader.ImportCsv(); // ...import into the database table.
+    totalDataRows =  reader.TotalDataRows;
+    rowsWritten = reader.RowsWritten;
 }
 
-bool success = rowsAdded > 0;
+bool success = rowsWritten == totalDataRows;
 ```
 
 Export results of a SQL query to CSV.
@@ -52,19 +58,35 @@ Import CSV into a database table.
 $inputDir = "C:\example\csv\{0}";
 $connectionString = "Server=localhost;Database=myDataTable;Trusted_Connection=yes;";
 
-function importCsv($path, $tableName, $connectionString, $delimiter){
-    $rowsAdded = 0;
-    $reader = New-Object EasyCsvLib.CsvReader($path, $tableName, $connectionString, $delimiter);
-    $rowsAdded = $reader.ImportCsv();
+function importCsv($path, $tableName, $delimiter = ",", $headerRowCount = 1, $colNames = $null, $batchSize = 1000, $timeOut = 300){
+    $csv = Test-Path -LiteralPath $path -ErrorAction Stop
+    $success = $false;
+
+    $reader = New-Object EasyCsvLib.CsvReader($path, $tableName, $connectionString, $delimiter, $headerRowCount, $colNames, $batchSize, $timeOut);
+    $reader.Verbose = $true;
+
+    $reader.ImportCsv();
+
+    $rowsAdded = $reader.RowsWritten;
+    $totalRows = $reader.TotalDataRows;
+    $batchCount = $reader.BatchCount;
+
+    if($rowsAdded -eq $totalRows) {
+       $success = $true;
+       Write-Host "Success! All $totalRows rows were imported to the database.";
+    }
+    else {
+       Write-Error "Error! Only $rowsAdded of $totalRows rows were imported to the database.";
+    }
+
     $reader.Dispose();
 
-    return $rowsAdded;
+    return $success;
 }
 
 $path = [string]::Format($inputDir, "example.csv");
 $tableName = "dbo.TestTable";
-$rowCount = importCsv $path $tableName $connectionString ",";
-echo "Added $rowCount rows.";
+importCsv $path $tableName;
 ```
 
 Export table to CSV.
