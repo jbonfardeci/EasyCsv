@@ -18,8 +18,8 @@ string tableName = "dbo.TestTable";
 string delimiter = ','; // ',' by default
 int headerRowCount = 1; // The number of header rows to skip. Set to 1 whether you use your own column names or the header in the CSV.
 string colNames = null; // You can use the column names in the CSV header or provide your own comma-delimited column names. They number and order must match the columns in the CSV.
-int batchSize = 1000; // Improt large (multi-GB) files in batch sizes of your choosing, streams in small chunks to the database.
-int timeOut = 300; // Set the database conneciton timeout. Increase for large files. Default is 5 minutes.
+int batchSize = 1000; // Import large (multi-GB) files in batch sizes of your choosing, streaming in small chunks to the database.
+int timeOut = 300; // Set the database connection timeout. Increase for large files. Default is 5 minutes.
 long rowsWritten = 0;
 long totalDataRows = 0;
 
