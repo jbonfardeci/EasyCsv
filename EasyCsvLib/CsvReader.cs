@@ -431,6 +431,7 @@ namespace EasyCsvLib
             string colName = col.ColumnName;
             string val = c.GetRxStripQuotes().Replace(value, "").TrimEnd();
 
+            // Test for empty white space or "null" or "(null)".
             if (c.IsEmpty(val))
             {
                 row[colName] = DBNull.Value;

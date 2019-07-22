@@ -181,12 +181,11 @@ namespace EasyCsvLib
 
         #region Parsers
 
-        public static Regex RxInt = new Regex("[^0-9]", RegexOptions.Compiled);
-        public static Regex RxDecimal = new Regex("[^0-9\\.]", RegexOptions.Compiled);
+        public static Regex RxNumeric = new Regex("[^0-9\\.]", RegexOptions.Compiled);
         public static Regex RxBoolTrue = new Regex("(true|yes|1)", RegexOptions.IgnoreCase);
         public static Regex RxBoolFalse = new Regex("(false|no|0)", RegexOptions.IgnoreCase);
         public static Regex RxDateTime = new Regex("[^0-9\\-\\/]", RegexOptions.IgnoreCase);
-        public static Regex RxNull = new Regex("null", RegexOptions.IgnoreCase);
+        public static Regex RxNull = new Regex("^(\\(null\\)|null)$", RegexOptions.IgnoreCase);
 
         /// <summary>
         /// Check if value is empty.
@@ -205,7 +204,7 @@ namespace EasyCsvLib
 
             char c;
 
-            if (char.TryParse(RxInt.Replace(val, ""), out c))
+            if (char.TryParse(val, out c))
                 return c;
 
             return null;
@@ -218,7 +217,7 @@ namespace EasyCsvLib
 
             float n;
 
-            if (float.TryParse(RxInt.Replace(val, ""), out n))
+            if (float.TryParse(RxNumeric.Replace(val, ""), out n))
                 return n;
 
             return null;
@@ -236,7 +235,7 @@ namespace EasyCsvLib
 
             int n;
 
-            if (int.TryParse(RxInt.Replace(val, ""), out n))
+            if (int.TryParse(RxNumeric.Replace(val, ""), out n))
                 return n;
 
             return null;
@@ -254,7 +253,7 @@ namespace EasyCsvLib
 
             long n;
 
-            if (long.TryParse(RxInt.Replace(val, ""), out n))
+            if (long.TryParse(RxNumeric.Replace(val, ""), out n))
                 return n;
 
             return null;
@@ -272,7 +271,7 @@ namespace EasyCsvLib
 
             short n;
 
-            if (short.TryParse(RxInt.Replace(val, ""), out n))
+            if (short.TryParse(RxNumeric.Replace(val, ""), out n))
                 return n;
 
             return null;
@@ -290,7 +289,7 @@ namespace EasyCsvLib
 
             decimal d;
 
-            if (decimal.TryParse(RxDecimal.Replace(val, ""), out d))
+            if (decimal.TryParse(RxNumeric.Replace(val, ""), out d))
                 return d;
 
             return null;
