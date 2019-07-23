@@ -215,10 +215,10 @@ namespace EasyCsvLib
             if (IsEmpty(val))
                 return null;
 
-            float n;
+            decimal d;
 
-            if (float.TryParse(RxNumeric.Replace(val, ""), out n))
-                return n;
+            if (decimal.TryParse(RxNumeric.Replace(val, ""), out d))
+                return float.Parse(d.ToString());
 
             return null;
         }
@@ -233,10 +233,10 @@ namespace EasyCsvLib
             if (IsEmpty(val))
                 return null;
 
-            int n;
+            decimal d;
 
-            if (int.TryParse(RxNumeric.Replace(val, ""), out n))
-                return n;
+            if (decimal.TryParse(RxNumeric.Replace(val, ""), out d))
+                return Convert.ToInt32(d);
 
             return null;
         }
@@ -251,10 +251,10 @@ namespace EasyCsvLib
             if (IsEmpty(val))
                 return null;
 
-            long n;
+            decimal d;
 
-            if (long.TryParse(RxNumeric.Replace(val, ""), out n))
-                return n;
+            if (decimal.TryParse(RxNumeric.Replace(val, ""), out d))
+                return Convert.ToInt64(d);
 
             return null;
         }
@@ -269,10 +269,10 @@ namespace EasyCsvLib
             if (IsEmpty(val))
                 return null;
 
-            short n;
+            decimal d;
 
-            if (short.TryParse(RxNumeric.Replace(val, ""), out n))
-                return n;
+            if (decimal.TryParse(RxNumeric.Replace(val, ""), out d))
+                return Convert.ToInt16(d);
 
             return null;
         }
