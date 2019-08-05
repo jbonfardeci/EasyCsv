@@ -13,7 +13,6 @@ namespace EasyCsvLib
     public interface ICsvWriter
     {
         bool OutputToCsv(string delimiter = ",");
-        bool OutputToCsv(char delimiter = ',');
         string Error { get; }
         DataTable DataTable { get; }
         string Delimiter { get; set; }
@@ -204,15 +203,6 @@ namespace EasyCsvLib
                 cmd.Dispose();
                 cmd = null;
             }
-        }
-
-        /// <summary>
-        /// Output the DataTable to a CSV. 
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool OutputToCsv(char delimiter = ',')
-        {
-            return c.OutputToCsv(_dataTable, _path, delimiter.ToString());
         }
 
         /// <summary>
