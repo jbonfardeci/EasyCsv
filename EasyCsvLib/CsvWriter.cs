@@ -119,6 +119,13 @@ namespace EasyCsvLib
             }
         }
 
+        private int _timeOut = 300;
+        public int TimeOut
+        {
+            get { return _timeOut; }
+            set { _timeOut = value; }
+        }
+
         #endregion
 
         /// <summary>
@@ -129,7 +136,7 @@ namespace EasyCsvLib
         /// <param name="connectionString"></param>
         /// <param name="delimiter"></param>
         /// <param name="queryString"></param>
-        public CsvWriter(string path, string connectionString, string queryString, string delimiter = ",", bool isStoredProcedure = false)
+        public CsvWriter(string path, string connectionString, string queryString, string delimiter = ",", bool isStoredProcedure = false, int timeout = 300)
         {
             if (c.IsEmpty(path))
                 _error = "Parameter 'path' is required.";
@@ -148,6 +155,7 @@ namespace EasyCsvLib
             _queryString = queryString;
             _delimiter = delimiter;
             _isStoredProcedure = isStoredProcedure;
+            _timeOut = timeout;
 
             GetData();
 
@@ -161,14 +169,9 @@ namespace EasyCsvLib
             }
         }
 
-        public static ICsvWriter Create(string path, string connectionString, string queryString, string delimiter = ",", bool isStoredProcedure = false)
+        public static ICsvWriter Create(string path, string connectionString, string queryString, string delimiter = ",", bool isStoredProcedure = false, int timeout = 300)
         {
-            return new CsvWriter(path, connectionString, queryString, delimiter);
-        }
-
-        public static ICsvWriter Create(string path, string connectionString, string queryString, char delimiter = ',', bool isStoredProcedure = false)
-        {
-            return new CsvWriter(path, connectionString, queryString, delimiter.ToString());
+            return new CsvWriter(path, connectionString, queryString, delimiter, isStoredProcedure, timeout);
         }
 
         protected virtual void GetData()
@@ -179,6 +182,8 @@ namespace EasyCsvLib
                 CommandType = _isStoredProcedure ? CommandType.StoredProcedure : CommandType.Text,
                 CommandText = _queryString
             };
+
+            cmd.CommandTimeout = _timeOut;
 
             SqlDataAdapter da = new SqlDataAdapter(cmd);
 

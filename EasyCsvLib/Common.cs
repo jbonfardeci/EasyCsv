@@ -181,7 +181,7 @@ namespace EasyCsvLib
 
         #region Parsers
 
-        public static Regex RxNumeric = new Regex("[^0-9\\.]", RegexOptions.Compiled);
+        public static Regex RxNumeric = new Regex("[^0-9\\.\\-]", RegexOptions.Compiled);
         public static Regex RxBoolTrue = new Regex("(true|yes|1)", RegexOptions.IgnoreCase);
         public static Regex RxBoolFalse = new Regex("(false|no|0)", RegexOptions.IgnoreCase);
         public static Regex RxDateTime = new Regex("[^0-9\\-\\/]", RegexOptions.IgnoreCase);
