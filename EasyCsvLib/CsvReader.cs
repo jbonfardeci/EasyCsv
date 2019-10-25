@@ -10,12 +10,11 @@ using c = EasyCsvLib.Common;
 
 namespace EasyCsvLib
 {
-    public interface ICsvReader
+    public interface ICsvReader: IDisposable
     {
         long ImportCsv();
         long GetTotalDataRowCount();
         bool OutputTableDefinition(string outputPath);
-        void Dispose();
         string Error { get; }
         DataTable DataTable { get; }
         string TableName { get; set; }
@@ -32,7 +31,7 @@ namespace EasyCsvLib
         bool Verbose { get; set; }
     }
 
-    public class CsvReader : IDisposable, ICsvReader
+    public class CsvReader: ICsvReader
     {
 
         #region class vars

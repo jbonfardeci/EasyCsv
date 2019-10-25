@@ -10,7 +10,7 @@ using c = EasyCsvLib.Common;
 
 namespace EasyCsvLib
 {
-    public interface ICsvWriter
+    public interface ICsvWriter : IDisposable
     {
         bool OutputToCsv(string delimiter = ",");
         string Error { get; }
@@ -20,10 +20,9 @@ namespace EasyCsvLib
         string FilePath { get; set; }
         string QueryString { get; set; }
         bool IsStoredProcedure { get; set; }
-        void Dispose();
     }
 
-    public class CsvWriter : IDisposable, ICsvWriter
+    public class CsvWriter : ICsvWriter
     {
 
         #region class vars
