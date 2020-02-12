@@ -255,6 +255,8 @@ namespace EasyCsvLib
                 cmd.Connection.Open();
                 da.Fill(_dataTable);
                 cmd.Connection.Close();
+
+                _dataTable = _dataTable.Clone();
             }
             catch (Exception ex)
             {
