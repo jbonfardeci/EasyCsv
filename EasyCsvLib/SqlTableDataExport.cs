@@ -222,7 +222,7 @@ namespace EasyCsvLib
                     else if (type == "System.String")
                         val = string.Format("'{0}'", value.Replace("'", "''"));
                     else if (type == "System.DateTime")
-                        val = ((DateTime)row[colName]).ToString();
+                        val = "'" + ((DateTime)row[colName]).ToString("o") + "'";
                     else if (type == "System.Boolean")
                         val = ((bool)row[colName]) ? "1" : "0";
                     else
