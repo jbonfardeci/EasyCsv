@@ -340,7 +340,7 @@ namespace EasyCsvLib
 
             DateTime d;
 
-            if (DateTime.TryParse(RxDateTime.Replace(val.Trim(), ""), out d))
+            if (DateTime.TryParse(val.Trim(), out d))
                 return d;
 
             return null;
