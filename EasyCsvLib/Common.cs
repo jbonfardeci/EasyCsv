@@ -184,7 +184,7 @@ namespace EasyCsvLib
         public static Regex RxNumeric = new Regex("[^0-9\\.\\-]", RegexOptions.Compiled);
         public static Regex RxBoolTrue = new Regex("(true|yes|1)", RegexOptions.IgnoreCase);
         public static Regex RxBoolFalse = new Regex("(false|no|0)", RegexOptions.IgnoreCase);
-        public static Regex RxDateTime = new Regex("[^0-9\\-\\/]", RegexOptions.IgnoreCase);
+        public static Regex RxDateTime = new Regex("[^0-9\\-\\/(AM|PM|T)\\:\\s]", RegexOptions.IgnoreCase);
         public static Regex RxNull = new Regex("^(\\(null\\)|null)$", RegexOptions.IgnoreCase);
         public static Regex RxPercent = new Regex("^[0-9\\.\\-]+\\%$");
 
@@ -340,7 +340,7 @@ namespace EasyCsvLib
 
             DateTime d;
 
-            if (DateTime.TryParse(RxDateTime.Replace(val, ""), out d))
+            if (DateTime.TryParse(RxDateTime.Replace(val.Trim(), ""), out d))
                 return d;
 
             return null;
