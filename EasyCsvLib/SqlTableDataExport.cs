@@ -64,7 +64,7 @@ namespace EasyCsvLib
         /// </summary>
         /// <param name="tableName"></param>
         /// <param name="schema"></param>
-        public bool ExportDataToSql(string tableName, string matchColumns, string identityColumn = null, bool includeIdentityColumn = false, string schema = "dbo")
+        public bool ExportDataToSql(string tableName, string matchColumns, string identityColumn=null, bool includeIdentityColumn=false, string schema="dbo")
         {
             DataTable dt = GetTableData(tableName, schema);
 
@@ -73,6 +73,15 @@ namespace EasyCsvLib
                 string strColumns = GetStringColumns(dt);
                 string nl = Environment.NewLine;
                 var sb = new StringBuilder();
+
+                if (includeIdentityColumn){
+                    sb.AppendFormat("SET IDENTITY_INSERT [{0}].[{1}] ON;\r\nGO\r\n\r\n", schema, tableName);
+                }
+                else if(identityColumn != null)
+                {
+                    dt.Columns.Remove(identityColumn);
+                    strColumns = GetStringColumns(dt);
+                }
 
                 // MERGE
                 sb.AppendFormat("MERGE INTO [{0}].[{1}] AS t{2}", schema, tableName, nl);
@@ -111,7 +120,10 @@ namespace EasyCsvLib
 
                 for (int i = 0; i < dt.Columns.Count; i++)
                 {
-                    var col = dt.Columns[i].ColumnName;
+                    string col = dt.Columns[i].ColumnName;
+                    if (col == identityColumn)
+                        continue;
+
                     sb.AppendFormat("\t\tt.[{0}] = x.[{0}]", col);
 
                     if (i < dt.Columns.Count - 1)
@@ -124,6 +136,9 @@ namespace EasyCsvLib
                 sb.AppendFormat("WHEN NOT MATCHED THEN{0}", nl);
                 sb.AppendFormat("\tINSERT({0}){1}", strColumns, nl);
                 sb.AppendFormat("\tVALUES({0});", strColumns);
+
+                if (includeIdentityColumn)
+                    sb.AppendFormat("\r\n\r\nSET IDENTITY_INSERT [{0}].[{1}] OFF;\r\nGO\r\n\r\n", schema, tableName);
 
                 if (!Directory.Exists(this.OutputDir))
                     Directory.CreateDirectory(this.OutputDir);

@@ -201,7 +201,13 @@ namespace EasyCsvLib
         /// <returns></returns>
         public virtual long GetTotalDataRowCount()
         {
-            return File.ReadLines(_path).LongCount() - _headerRowCount;
+            long rc = 0;
+            using (var rdr = File.OpenText(this._path)) {
+                while (rdr.ReadLine() != null) {
+                    rc++;
+                }
+            }
+            return rc - _headerRowCount;
         }
 
         /// <summary>
